@@ -2,6 +2,11 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 3.4.4 (2026-11-09)
+
+### Changed
+- **安装目标调整**：新增 `dsh`（DeepSeek Harness，`~/.dsh/skills`，按 `dsh` 命令探测）；**移除 `pi`**（不再支持）。
+
 ## 3.4.3 (2026-11-09)
 
 ### Changed

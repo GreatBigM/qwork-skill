@@ -6,7 +6,7 @@ workbench 让嵌入式/软件开发团队的项目任务管理跟代码走：每
 
 ## 安装
 
-本 skill 支持多 agent 目标：Hermes / Claude Code / Codex / ZCode。安装脚本自动探测本机已安装的 agent，让用户选择安装目标。
+本 skill 支持多 agent 目标：Hermes / Claude Code / Codex / ZCode / DeepSeek Harness(dsh)。安装脚本自动探测本机已安装的 agent，让用户选择安装目标。
 
 ```bash
 # 方式 1：交互选择安装目标（推荐，先下载再执行以保留交互）
@@ -41,6 +41,7 @@ cp -r qwork-skill/references ~/.hermes/skills/qwork/
 cp qwork-skill/SCHEMA.md ~/.hermes/skills/qwork/   # 宪法，不可省
 cp qwork-skill/CHANGELOG.md ~/.hermes/skills/qwork/   # 版本历史（install.sh 同样拷贝）
 # ZCode: cp -r 到 ~/.zcode/skills/qwork/（同样别漏 SCHEMA.md 与 CHANGELOG.md）
+# dsh:   cp -r 到 ~/.dsh/skills/qwork/（同上）
 
 # 3. 会话内 /reload-skills，或新开会话自动加载
 ```
