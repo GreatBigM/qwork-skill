@@ -1,4 +1,4 @@
-# workbench-skill
+# qwork-skill
 
 Agent 项目任务管理技能（skill）—— 基于 0_workbench/ 目录的 change 四要素任务体系。
 
@@ -10,13 +10,13 @@ workbench 让嵌入式/软件开发团队的项目任务管理跟代码走：每
 
 ```bash
 # 方式 1：交互选择安装目标（推荐，先下载再执行以保留交互）
-curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
+curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
 
 # 方式 2：指定目标（非交互，含 ZCode）
-curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bash -s -- --target hermes,claude,zcode
+curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh | bash -s -- --target hermes,claude,zcode
 
 # 方式 3：安装到全部检测到的 agent
-curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bash -s -- --all
+curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh | bash -s -- --all
 ```
 
 > 脚本等价于手动复制（clone + cp），不经过安全扫描，可先审阅脚本内容再执行。
@@ -31,15 +31,15 @@ curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bas
 
 ```bash
 # 1. 克隆本仓库
-git clone https://gitee.com/GreatBigM/workbench-skill.git
+git clone https://gitee.com/GreatBigM/qwork-skill.git
 
 # 2. 复制到目标工具的 skills 目录（不经过安全扫描）
 mkdir -p ~/.hermes/skills/qwork
-cp workbench-skill/SKILL.md ~/.hermes/skills/qwork/
-cp -r workbench-skill/templates ~/.hermes/skills/qwork/
-cp -r workbench-skill/references ~/.hermes/skills/qwork/
-cp workbench-skill/SCHEMA.md ~/.hermes/skills/qwork/   # 宪法，不可省
-cp workbench-skill/CHANGELOG.md ~/.hermes/skills/qwork/   # 版本历史（install.sh 同样拷贝）
+cp qwork-skill/SKILL.md ~/.hermes/skills/qwork/
+cp -r qwork-skill/templates ~/.hermes/skills/qwork/
+cp -r qwork-skill/references ~/.hermes/skills/qwork/
+cp qwork-skill/SCHEMA.md ~/.hermes/skills/qwork/   # 宪法，不可省
+cp qwork-skill/CHANGELOG.md ~/.hermes/skills/qwork/   # 版本历史（install.sh 同样拷贝）
 # ZCode: cp -r 到 ~/.zcode/skills/qwork/（同样别漏 SCHEMA.md 与 CHANGELOG.md）
 
 # 3. 会话内 /reload-skills，或新开会话自动加载
@@ -80,7 +80,7 @@ mkdir -p 0_workbench/change/<change_name>
 ## 仓库结构
 
 ```
-workbench-skill/
+qwork-skill/
 ├── README.md                        ← 本文件
 ├── install.sh                       ← 一键安装脚本
 ├── SKILL.md                         ← 操作手册（触发条件/操作流程，仓库根即 skill）

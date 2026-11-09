@@ -2,6 +2,11 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 3.4.3 (2026-11-09)
+
+### Changed
+- **发布仓更名 `workbench-skill` → `qwork-skill`**（Gitee / GitHub 双远端已改）：`install.sh` 的 `REPO_URL`、README 的 clone / raw 下载地址同步更新。**旧安装命令失效**，请改用 `https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh`。
+
 ## 3.4.2 (2026-11-09)
 
 ### Changed

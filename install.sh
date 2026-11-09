@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # qwork skill 一键安装/更新脚本（多 agent 目标）
 # 用法:
-#   交互选择: curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
-#   指定目标: curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bash -s -- --target hermes,claude,zcode,pi
-#   全部目标: curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bash -s -- --all
+#   交互选择: curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
+#   指定目标: curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh | bash -s -- --target hermes,claude,zcode,pi
+#   全部目标: curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh | bash -s -- --all
 # 等价于手动复制，不经过安全扫描。重复执行 = 更新（自动备份旧版 + 版本对比）
-# 镜像: github.com/GreatBigM/workbench-skill（海外备选）
+# 镜像: github.com/GreatBigM/qwork-skill（海外备选）
 set -euo pipefail
 
-REPO_URL="https://gitee.com/GreatBigM/workbench-skill.git"
+REPO_URL="https://gitee.com/GreatBigM/qwork-skill.git"
 SKILL_NAME="qwork"
 COPY_DIRS="templates references"   # 除 SKILL.md/CHANGELOG.md 外需拷贝的目录
 
