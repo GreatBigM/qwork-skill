@@ -25,7 +25,7 @@ curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bas
 
 ## 安装（备选：手动复制）
 
-> ⚠️ 注意：部分 agent 的 `skills install`（tap/URL 方式）对 workbench-workflow 会触发安全扫描拦截——
+> ⚠️ 注意：部分 agent 的 `skills install`（tap/URL 方式）对 qwork 会触发安全扫描拦截——
 > 扫描器将「引用 AGENTS.md」等判定为 dangerous（误报，workbench 本质是管理 AGENTS.md 的任务体系），
 > 且 community 来源 + dangerous 判定不可用 --force 绕过。**请使用一键脚本或手动复制安装，不经过扫描。**
 
@@ -34,13 +34,13 @@ curl -fsSL https://gitee.com/GreatBigM/workbench-skill/raw/main/install.sh | bas
 git clone https://gitee.com/GreatBigM/workbench-skill.git
 
 # 2. 复制到目标工具的 skills 目录（不经过安全扫描）
-mkdir -p ~/.hermes/skills/workbench-workflow
-cp workbench-skill/SKILL.md ~/.hermes/skills/workbench-workflow/
-cp -r workbench-skill/templates ~/.hermes/skills/workbench-workflow/
-cp -r workbench-skill/references ~/.hermes/skills/workbench-workflow/
-cp workbench-skill/SCHEMA.md ~/.hermes/skills/workbench-workflow/   # 宪法，不可省
-cp workbench-skill/CHANGELOG.md ~/.hermes/skills/workbench-workflow/   # 版本历史（install.sh 同样拷贝）
-# ZCode: cp -r 到 ~/.zcode/skills/workbench-workflow/（同样别漏 SCHEMA.md 与 CHANGELOG.md）
+mkdir -p ~/.hermes/skills/qwork
+cp workbench-skill/SKILL.md ~/.hermes/skills/qwork/
+cp -r workbench-skill/templates ~/.hermes/skills/qwork/
+cp -r workbench-skill/references ~/.hermes/skills/qwork/
+cp workbench-skill/SCHEMA.md ~/.hermes/skills/qwork/   # 宪法，不可省
+cp workbench-skill/CHANGELOG.md ~/.hermes/skills/qwork/   # 版本历史（install.sh 同样拷贝）
+# ZCode: cp -r 到 ~/.zcode/skills/qwork/（同样别漏 SCHEMA.md 与 CHANGELOG.md）
 
 # 3. 会话内 /reload-skills，或新开会话自动加载
 ```

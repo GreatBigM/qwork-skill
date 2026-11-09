@@ -1,11 +1,11 @@
 ---
-name: workbench-workflow
+name: qwork
 description: 项目任务管理体系：change 四要素生命周期、闭环验收、spec 维护，任务全程可控。
-version: 3.3.7
+version: 3.4.2
 category: knowledge
 metadata:
   agent:
-    triggers: [workbench, change, 新建任务, 闭环, 验收, 归档, spec, design吸收, 四要素]
+    triggers: [qwork, workbench, change, 新建任务, 闭环, 验收, 归档, spec, design吸收, 四要素]
 ---
 
 # 项目任务管理（workbench）
@@ -90,6 +90,16 @@ spec（规格：成功标准+约束）· design（设计：怎么改）· tasks�
 
 > **归档 ≠ 闭环完成**（2026-09-07 optimized-vs-competitor 实例）：tasks.md 标 ✅ + 目录已进 archive/ 仍可能缺 check.md 勾选同步、tasks.md 结果表回填、项目级 spec.md changelog 行（该 change 分析/qwiki/归档全做了, 这三件文书滞后一整个周末没人发现）。查「还剩什么没做 / 是否真收口」先跑**收口三件套审计**再答：① check.md 的 [ ] 是否全 [x]（含 P2 分析/产出段, 不只 P1）② tasks.md 数据结果表是否回填（数字须落表, 不能只在分析文档里）③ 项目级 spec.md 变更记录是否有该 change 行——缺哪项当场补齐, 与 qwiki git log 交叉佐证沉淀。
 
+## 接手断点 change（从上个会话/别人手里接）
+
+接手一个已开工的 change 时，**先把「文档写的」和「现场对的」对齐再动手**，顺序不能倒：
+
+1. **定位断点**：`ls -lat change/<name>/` + 它的 `data/**` 最近 mtime 与 qwiki `git log` 比——文档比最后一次 qwiki 提交新 ⇒ 那一段还没沉淀；再看有没有在跑的后台进程（烧录/测试跑到一半被会话切断是常态，见 `serial-tftp` 「接手现场」）。
+2. **核对历史记录值**：tasks.md/spec.md 里写下的设备原值、基线数字，可能与现场回读不符（写记录时凭假设/串了口径）。**以现场读回和数据文件为准**，错记当场改掉并在收口卡里列为「证伪/更正项」；带着错记往下做验收，等于拿错基线判通过。
+3. **空着的验收表 = 未收口**：`tasks.md` 的验收结果表 / `check.md` 的 [ ] 空着就不算完；把实测数字回填到表里（数字只躺在 `data/` 里没人看得到）。
+4. **汇报三块齐全**：结论（通过了什么、证据是哪条读数）／**证伪项与错记更正**／**未处理与决定不做的项**。只报成功的汇报会被当成隐瞒，用户明确要求把否结论一并列出。
+
+
 ## 驱动 CONFIG A/B 试验方法论（rx-prealloc-ab 2026-09-05 实测沉淀）
 
 对驱动编译期开关（CONFIG_X =n→=y）做 A/B 验证的 change，执行会话必须遵守以下验证链（同厂商谱系补丁双分支同步场景通用）：
@@ -102,6 +112,13 @@ spec（规格：成功标准+约束）· design（设计：怎么改）· tasks�
 3d. **裁决后复核（ABA rerun）惯例 + 同型号多机辨识坑**（fw-swap-test 2026-09-07 复核实证）：① 裁决型实验闭环后**用户可能要求复核**——同口径 A→B→A 再跑一组（同日下午环境漂移可小一个量级: TX 漂移 35.5%→1.5%, 判别力更强）；rerun 数据落 `change/data/rerun/` 子目录隔离（与首组同名 fwA/fwB 不冲突），复核结果追加到 analysis 文档「§复核」节 + qwiki 卡 summary 同步（summary 三处同步纪律同前）。**复核价值实例**：首组 TX B vs A' +4.2% 擦边信号, 复核组稳定时段仅 +1~3% **不重复** → 定性首组 A 段 TX 68.9 为环境时段低值（非 A 固件特性）——疑似增益信号复核不复现 = 环境伪信号, 原裁决巩固而非推翻。② **同型号多机在线必先辨识实验机**（用户纠正实例）：adb devices 多台同型号样机（hostname 相同 / 固件目录同名）时勿按 IP 顺手连——实验机辨识信号 = **现跑固件 md5 与 spec/仓库基线吻合**（fw-swap 误连 <样机IP A>/<样机IP B> 两样机跑固件 345984B 旧版, 真实验机 `…<尾段>`（末段 .92）固件 274a469b = spec 274a469b…；样机 fmacfw 无 _ipc 后缀名亦为线索）；连错设备 P0 全部勘察白做 + 方案可能被错误设备状态误导。③ wpa_cli 连非默认 ctrl_interface 需 `-p /tmp/wpa_supplicant`（设备 conf 的 ctrl_interface 指向 /tmp, 默认 /var/run 报 No such file）；signal_poll 输出键为大写 `RSSI=`/`FREQUENCY=`（小写 grep 'signal' 抓不到, 矩阵脚本 RSSI 记录会静默丢）
 4. **测试脚本适配**：复用解析脚本先查其硬编码路径/host 判定（parse_top.py 硬编码旧目录 + 按文件名含 <项目A> 判 host，归档后路径失效需 monkey）；设备采集用后台脚本 + 轮询 ALL_DONE 标记，勿 adb 前台阻塞长任务
 5. **测试通道失联先判别设备侧 vs 环境**：iperf server ping 不通 ≠ server 故障——先重启设备验证（曾因驱动缺陷致 WiFi 链路假死、ping 全丢、重启即恢复）；驱动嫌疑用烧回对照版 A/B 判别
+
+## 长测 / 长等待纪律（2026-10-24 实证：多睡 7.5min 才发现已完成）
+
+1. **只留一个权威 job**：同机并发多条 soak（不同 change 各起一遍）会互相打断、抢设备窗口，「进行中」记录过期。一轮长测供多个 change 共用证据，并在各 change 写**证据映射表**，别各烧各测。
+2. **末片 sleep 必须对齐已知终点**：`for i in $(seq N); do sleep 1740; done` 这类轮询若片长乘片数越过终点（3×1740 + 尾片 1700 > 2h），会多等一整轮。以 `结束时间 - 当前时间` 算最后一片，或直接轮询完成标记。
+3. **判完成靠产物/标记，不靠时长**：`SOAK_DONE` 文件、`Written: OK`、`partition PASSED`、日志末行时间戳到点，任一命中即推进；等待期不新增竞争唤醒源。
+4. **长任务一律 background + notify**：前台 sleep 链会被会话超时/中断打断，且中途无法做别的判断。
 
 ## 执行防护（对话分离 + 失败熔断）
 

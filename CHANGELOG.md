@@ -2,6 +2,17 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 3.4.2 (2026-11-09)
+
+### Changed
+- **技能更名 `workbench-workflow` → `qwork`**（与 `qwiki` 同族命名；`0_workbench/` 目录结构与「workbench」概念词不变）。安装路径随之变为 `<tool>/skills/qwork/`。
+
+## 3.4.1 (2026-10-25)
+
+### Added
+
+- **长测 / 长等待纪律**：只留一个权威 job（多 change 共用一轮长测 + 证据映射表）；末片 sleep 对齐已知终点（3×1740 + 尾片 1700 越过 2h ⇒ 多等 7.5min）；判完成靠 `SOAK_DONE`/`Written: OK`/`partition PASSED` 标记而非时长；长任务走 background + notify
+
 ## 3.3.7 (2026-10-15)
 
 ### Changed
