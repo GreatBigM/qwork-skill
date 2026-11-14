@@ -2,6 +2,16 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 4.5.0 (2026-11-14)
+
+### Added（归档与总览）
+
+- **`tools/qwork-archive.py`**：默认先跑 close 门；被跟踪用 `git mv`，否则普通移动；把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，并复核 `data/**` 不因路径变化变 untracked；失败回滚；`--dry-run` 预演、`--commit` 提交、`--force` 跳过门。
+- **`tools/qwork-status.py`**：扫 `change/` 与 `archive/`，输出四要素、任务完成度、C 覆盖、状态与下一步；`--json`。
+- SKILL §4/§5/§7、SCHEMA §三、README 接入两个命令；README 工具段扩为 check/archive/status。
+
+- 版本 4.4.0 → 4.5.0
+
 ## 4.4.0 (2026-11-14)
 
 ### Added（追踪与门禁）

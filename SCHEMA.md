@@ -136,14 +136,14 @@ change/ 施工中
 
 > 归档检查清单（全绿才算归档完成）：① tasks 收口：全部 `[x]` 且每项有证据（含 P2/产出段）；阻塞项为**经用户确认的阻塞收口**（记 `[!]` + 未验证项，视同收口）；无其他未解除 `[!]`；check 各条已跑过、每个 `C` 在验收结果里都有行（结论落 tasks）② tasks 测试数据与验收结果已回填 ③ design 要点已合并进 design/ ④ 项目级 spec.md 已复审并记 changelog ⑤ 产出物已落知识库（或经用户确认无需沉淀）⑥ 四要素已迁 `archive/`。
 
-> 归档移动的 git 语义：先 `mkdir -p archive/`，再 `git ls-files 0_workbench` 判断是否被跟踪——被跟踪用 `git mv` 并一并提交（提交信息建议 `<change>: 归档收口`）；移动后 `git status` 复核，ignore 规则若因路径变化失效需同步（细则见 SKILL §4 第 5 步）。
+> 归档移动：优先 `python3 <skill-dir>/tools/qwork-archive.py <change>`（过 close 门、`git mv`、把 `.gitignore` 的 `change/` 规则镜像到 `archive/`、复核无 untracked；`--commit` 提交）。手工语义：`git ls-files` 判断跟踪 → `git mv` → `git status` 复核 ignore（细则见 SKILL §4 第 5 步）。
 
 ### 派发与回执（编排闭环）
 
-- **派发前**：四要素冻结，先跑 `tools/qwork-check.py <change> --dispatch`，再按 SKILL §6「派发就绪八问」自检；执行者只读四要素 + `data/`，只写 `tasks` 与 `data/`。
+- **派发前**：四要素冻结，先跑 `<skill-dir>/tools/qwork-check.py <change> --dispatch`，再按 SKILL §6「派发就绪八问」自检；执行者只读四要素 + `data/`，只写 `tasks` 与 `data/`。
 - **接手须知必填**：必读文件、环境/前置、绝对禁止、**决策权**（谁批 spec 变更/归档/阻塞）、**启动条件**、**停止/重规划条件**、完成判据、回报与交付。缺 who/when 的派发不算冻结。
 - **执行中**：阻塞即退出，不自行改设计；任务完成必须写判据/证据。
-- **回执**：完成 / 证据 / 偏差 / 未决 / 下一步 / 工作区终态；规划会话核验三查后再收口（收口前跑 `tools/qwork-check.py <change> --close`）。
+- **回执**：完成 / 证据 / 偏差 / 未决 / 下一步 / 工作区终态；规划会话核验三查后再收口（收口前跑 `<skill-dir>/tools/qwork-check.py <change> --close`）。
 - **冷启动演练（推荐）**：把 change 目录交给一个新会话/子代理，只问「你下一步做什么、依据哪条」；它若反问，说明工件没冻结。
 
 ## 四、知识沉淀衔接

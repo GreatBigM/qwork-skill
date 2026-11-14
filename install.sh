@@ -108,6 +108,8 @@ install_one() {
     for d in "${INSTALL_DIRS[@]}"; do
         [ -d "${SRC}/${d}" ] && cp -R "${SRC}/${d}" "${dest}/"
     done
+    # Python 缓存不进安装副本（tools/ 下跑 py_compile 会生成）
+    find "${dest}" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
 
     if [ -n "$bak" ] && [ -d "${bak}/${LOCAL_OVERLAY}" ]; then
         mkdir -p "${dest}/${LOCAL_OVERLAY}"

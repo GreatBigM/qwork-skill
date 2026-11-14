@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：新建/修改/接手 change，四要素（spec/design/tasks/check）落地，验收→吸收 design→更新项目级 spec→归档闭环，维护 0_workbench 结构与进度；也用于查任务进度、初始化 workbench、把产出沉淀到知识库。
-version: 4.4.0
+version: 4.5.0
 category: knowledge
 metadata:
   agent:
@@ -99,10 +99,8 @@ metadata:
 2. design 要点**合并**进 `0_workbench/design/` 现有章节（末尾标 `> 来源: <change>`），不堆文件。
 3. **强制**复审项目级 `spec.md` 全文：新增约束/天花板/配置 → 更新并在「变更记录」记一行（不是「按需」）。
 4. 产出物落知识库产出区；路径、命名与登记按知识库侧规则（本 skill 不定义）。**本机无知识库约定时先问用户产出放哪（或确认无需沉淀），不自创目录**（「无约定」= 本机没有可发现的知识库管理技能或目录规则；有则按其规则执行）。
-5. **归档移动**：先 `mkdir -p 0_workbench/archive`；再 `git -C <项目根> ls-files 0_workbench | head -1` 判断是否被跟踪——
-   - 被跟踪：用 `git mv`（裸 `mv` 会变成删除 + 未跟踪）；移动后 `git status` 复核，原先被 ignore 的 `data/**` 若因路径变化变 untracked，改 `.gitignore` 同时覆盖 `change/` 与 `archive/`；
-   - 未跟踪：普通 `mv` 即可。
-6. **commit**：代码改动与 workbench 文档改动（若被跟踪，含归档移动与 .gitignore）一并提交，不 push；提交信息建议 `<change>: 归档收口`。纯文档 change 把证据链写进 tasks 结尾：文件清单 + `git diff --stat <范围>` + 核验输出摘要（如 `report.sh → pilot-ok，9B`）。
+5. **归档**：`python3 <skill-dir>/tools/qwork-archive.py <change>`（默认先过 close 门；被跟踪走 `git mv`，并自动把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，复核无 untracked；`--dry-run` 预演，`--commit` 提交）。手工等价：`mkdir -p archive` → `git ls-files` 判断跟踪 → `git mv` → `git status` 复核 `data/**` 是否因路径变化变 untracked 并同步 ignore。
+6. **commit**：代码改动单独提交；workbench 文档（含归档移动与 `.gitignore`）用 `qwork-archive --commit` 提交，或与代码一并提交；不 push，提交信息建议 `<change>: 归档收口`。纯文档 change 把证据链写进 tasks 结尾：文件清单 + `git diff --stat <范围>` + 核验输出摘要（如 `report.sh → pilot-ok，9B`）。
 
 **收口三件套（最常漏，完整清单见 SCHEMA §三）**：① tasks 收口：全部 `[x]` 且有证据（含 P2/产出段），阻塞项经用户确认的 `[!]` 视同收口；无其他未解除 `[!]`；check 各条已跑过、每个 `C` 在验收结果里都有行（结论落 tasks）② tasks 数据表已回填 ③ 项目级 spec 变更记录有该 change 行——任一缺失都说明还没真收口。经验：tasks 全 ✅ + 目录已进 archive/，仍可能三件都缺（optimized-vs-competitor 实例）——查「是否真收口」先跑审计再答。
 
@@ -114,7 +112,7 @@ metadata:
 
 ## §5 接手断点 change
 
-1. **定位断点**：先 `git status --short` 看工作区有无未提交的施工残留；`ls -lat 0_workbench/change/<name>/` 与 `data/` 最近 mtime；知识库若为 git 仓再比最近提交；查是否还有后台进程在跑（烧录/测试跑到一半被切断是常态）。
+1. **定位断点**：先 `python3 <skill-dir>/tools/qwork-status.py .` 看全项目进度，再 `git status --short` 看工作区有无未提交的施工残留；`ls -lat 0_workbench/change/<name>/` 与 `data/` 最近 mtime；知识库若为 git 仓再比最近提交；查是否还有后台进程在跑（烧录/测试跑到一半被切断是常态）。
 2. **核对记录值**：文档里的设备原值/基线可能与现场不符——**以现场读回和数据文件为准**，错记当场改，并在收口卡列「证伪/更正项」。
 3. **空着的验收表 = 未收口**：把实测数字回填进表（数字只躺在 `data/` 里没人看得到）。
 4. **汇报三块**：结论（证据是哪条读数）/ 证伪与错记更正 / 未处理与决定不做的项。
@@ -122,7 +120,7 @@ metadata:
 ## §6 执行载体与交接
 
 - **对话分离**：规划会话产出四要素；执行会话**只读四要素 + `data/`**（spec/design/tasks/check 全读、只读），**只写 `tasks.md` 与 `data/`**；不得改 spec/design/check，遇阻塞即退出。两对话只传工件（文件），不传聊天历史。
-- **派发就绪自检（派单前必过）**：先跑 `python3 tools/qwork-check.py <change> --dispatch`（机器查 ID/覆盖/接手须知），再人工过八问：① 执行者要读哪些文件、各自是否自足？② 第一条任务、第一条命令是什么？③ 每个任务的完成判据是否可观察？④ 每个指标的基线/目标/测量口径在哪？⑤ 环境/设备/权限从哪来？⑥ 什么绝对不能改、卡住时谁拍板（决策权）？⑦ 什么条件启动、什么条件停止/退回规划？⑧ 做完交什么、按什么格式回报？——任一答成「在之前的对话里」或「执行者自己判断」，就是没冻结，先补再派。
+- **派发就绪自检（派单前必过）**：先跑 `python3 <skill-dir>/tools/qwork-check.py <change> --dispatch`（机器查 ID/覆盖/接手须知），再人工过八问：① 执行者要读哪些文件、各自是否自足？② 第一条任务、第一条命令是什么？③ 每个任务的完成判据是否可观察？④ 每个指标的基线/目标/测量口径在哪？⑤ 环境/设备/权限从哪来？⑥ 什么绝对不能改、卡住时谁拍板（决策权）？⑦ 什么条件启动、什么条件停止/退回规划？⑧ 做完交什么、按什么格式回报？——任一答成「在之前的对话里」或「执行者自己判断」，就是没冻结，先补再派。
 - **载体二选一**：新窗口执行会话，或子代理（主对话决策，子代理实测）。子代理按回执格式带回数据与建议（证据给路径/关键读数），**不 commit、不归档、不写知识库**——提交由主对话核验后完成并回填 hash；独立执行会话可按 §3 每阶段自行 commit。方向性决策留主对话。
 - **一代理一里程碑**：编译+烧录+长稳整包必超时；按「烧 B + 短矩阵」「B 长稳」「烧 A + 复测」拆，靠落盘 `change/data/` 接力；给现成 IP/通道，禁止探索。
 - **并发双写**：写前看目标目录 `ls -lat` 是否秒级新鲜、工具是否报 sibling 修改；撞警示即停，请用户裁定所有权；归档前复核目录归属。DSH 多会话同进程，别用 `ps | grep hermes` 判并发。
@@ -131,6 +129,8 @@ metadata:
 
 ## §7 参考
 
+> `<skill-dir>` = 本 `SKILL.md` 所在目录（安装后如 `~/.dsh/skills/qwork`）；命令里的 `tools/...` 指该目录下，不是项目根。
+
 - `SCHEMA.md` — 宪法：目录结构 / 四要素边界 / 拒绝态 / 流转 / 知识沉淀 / spec 维护 / design 吸收
 - `templates/` — spec / design / tasks / check 四模板
 - `references/experiment-playbook.md` — 做驱动 A/B、固件换版、长测类 change 前必读（判据设计 + 验证链）
@@ -138,6 +138,8 @@ metadata:
 - `references/troubleshooting.md` — 反模式速查
 - `references/local/*.md` — 本机实践扩展（不随上游更新覆盖）
 - `tools/qwork-check.py` — 派发/收口门：`--dispatch` / `--close` / `--strict` / `--json`
+- `tools/qwork-archive.py` — 归档事务：close 门 → `git mv` → archive ignore 镜像 → 复核；`--dry-run` / `--commit`
+- `tools/qwork-status.py` — 全项目进度：四要素 / 任务 / C 覆盖 / 下一步；`--json`
 - `examples/` — 两份填满的黄金样例（`doc-change` 文档类、`experiment-change` 实验类），照抄结构而不是照抄数字
 
 ## 支持文件清单
