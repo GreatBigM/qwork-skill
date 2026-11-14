@@ -54,15 +54,21 @@ def read(path: Path) -> str:
 def section(text: str, *keywords: str) -> str | None:
     lines = text.splitlines()
     start = None
+    level = 2
     for i, line in enumerate(lines):
-        if line.startswith("## ") and any(k in line for k in keywords):
-            start = i + 1
-            break
+        m = re.match(r"^(#{1,2})\s+(.*)$", line)
+        if m:
+            heading = m.group(2).strip()
+            if any(heading == k or heading.startswith(k + " ") or heading.startswith(k + "（") for k in keywords):
+                start = i + 1
+                level = len(m.group(1))
+                break
     if start is None:
         return None
     out: list[str] = []
     for line in lines[start:]:
-        if line.startswith("## "):
+        m = re.match(r"^(#{1,2})\s+", line)
+        if m and len(m.group(1)) <= level:
             break
         out.append(line)
     return "\n".join(out)
@@ -460,6 +466,16 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
         for cid in check_ids:
             if cid not in result_ids:
                 f.error(f"check {cid} 在 tasks 验收结果中没有对应行")
+
+    m = re.search(r"^\s*最终\s*[:：]\s*(.+)$", tasks, re.M)
+    final = m.group(1).strip() if m else ""
+    if not final:
+        f.error("tasks 缺「最终：」行（通过 / ❌ 未通过（证伪））")
+    elif f.verdicts["fail"]:
+        if "未通过" not in final and "证伪" not in final:
+            f.error(f"存在 ❌ 未通过，但「最终：」写的是 {final!r}；应写「最终：❌ 未通过（证伪）」")
+    elif "未通过" in final or "证伪" in final:
+        f.error(f"验收结果没有 ❌，但「最终：」写的是 {final!r}；应改为「最终：通过」")
 
     if f.verdicts["fail"]:
         design_text = read(change / "design.md") if (change / "design.md").is_file() else ""

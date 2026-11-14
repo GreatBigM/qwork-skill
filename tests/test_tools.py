@@ -109,6 +109,47 @@ def test_close_hints_unchecked_blocked_task(tmp_path: Path) -> None:
     assert "改 [!]" in p.stdout + p.stderr
 
 
+def test_close_rejects_missing_final_line(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = "\n".join(line for line in tasks.splitlines() if not line.startswith("最终："))
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "缺「最终" in p.stdout + p.stderr
+
+
+def test_close_rejects_final_contradiction(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("最终：通过", "最终：❌ 未通过", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "没有 ❌" in p.stdout + p.stderr
+
+
+def test_dry_run_prints_plan_when_gate_fails(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("| C1 | S1: 3/3 | 3/3 | ✅ |", "| C1 | S1: 3/3 | 3/3 | ❌ |")
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(ARCHIVE, str(change), "--dry-run", cwd=root)
+    assert p.returncode != 0
+    assert "项目根" in p.stdout
+    assert "close 门 : FAIL" in p.stdout
+    assert "预演结束" in p.stdout
+
+
+def test_section_accepts_hash_heading(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    check = (change / "check.md").read_text(encoding="utf-8")
+    check = check.replace("## 验收", "# 验收", 1)
+    (change / "check.md").write_text(check, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+
+
 def test_status_flags_unchecked_blocked_hint(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     tasks = (change / "tasks.md").read_text(encoding="utf-8")

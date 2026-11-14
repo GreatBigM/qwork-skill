@@ -219,20 +219,6 @@ def main() -> int:
         if target.exists():
             raise Fail(f"归档目标已存在：{target}")
 
-        code, data, raw = run_gate(change)
-        gate_ok = code == 0
-        verdicts = data.get("verdicts") or {}
-        if gate_ok and any(verdicts.values()):
-            extra = "（证伪留档）" if data.get("rejected") else ""
-            print(f"判定: {verdicts.get('pass', 0)} ✅ / {verdicts.get('fail', 0)} ❌ / "
-                  f"{verdicts.get('blocked', 0)} ⚠️{extra}")
-        if not gate_ok:
-            print_gate_failure(data, raw)
-            if not args.force:
-                print("先修完再归档；确需跳过加 --force（不推荐）。", file=sys.stderr)
-                return 1
-            print("⚠️ --force：跳过 close 门，继续归档", file=sys.stderr)
-
         repo = is_git(root)
         is_tracked = repo and tracked(root, change.relative_to(root).as_posix())
         rel_old = change.relative_to(root).as_posix()
@@ -240,15 +226,44 @@ def main() -> int:
         _, ignore_text = read_ignore(root)
         additions = ignore_additions(ignore_text)
 
-        if args.dry_run:
+        def show_verdict(gate_ok: bool, data: dict, raw: str) -> None:
+            verdicts = data.get("verdicts") or {}
+            if gate_ok and any(verdicts.values()):
+                extra = "（证伪留档）" if data.get("rejected") else ""
+                print(f"判定: {verdicts.get('pass', 0)} ✅ / {verdicts.get('fail', 0)} ❌ / "
+                      f"{verdicts.get('blocked', 0)} ⚠️{extra}")
+            if not gate_ok:
+                print_gate_failure(data, raw)
+
+        def show_plan(gate_ok: bool) -> None:
             print(f"项目根   : {root}")
             print(f"change   : {rel_old}")
             print(f"归档到   : {rel_new}")
             print(f"git 跟踪 : {'是（git mv）' if is_tracked else '否（普通移动）'}")
             print(f"close 门 : {'PASS' if gate_ok else 'FAIL（--force 才会继续）'}")
             print(f"ignore + : {additions or '（无镜像规则；移动后按 data/ untracked 兜底）'}")
-            print("预演结束：未改任何文件。")
+            print("预演结束：未改任何文件。", flush=True)
+
+        if args.dry_run:
+            code, data, raw = run_gate(change)
+            gate_ok = code == 0
+            show_plan(gate_ok)
+            show_verdict(gate_ok, data, raw)
+            if not gate_ok:
+                if not args.force:
+                    print("先修完再归档；确需跳过加 --force（不推荐）。", file=sys.stderr)
+                    return 1
+                print("⚠️ --force：跳过 close 门，继续归档", file=sys.stderr)
             return 0 if gate_ok or args.force else 1
+
+        code, data, raw = run_gate(change)
+        gate_ok = code == 0
+        show_verdict(gate_ok, data, raw)
+        if not gate_ok:
+            if not args.force:
+                print("先修完再归档；确需跳过加 --force（不推荐）。", file=sys.stderr)
+                return 1
+            print("⚠️ --force：跳过 close 门，继续归档", file=sys.stderr)
 
         if not repo:
             raise Fail("项目根不是 git 仓库；qwork 归档要求 git（否则无法复核移动与 ignore）")
