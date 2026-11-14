@@ -14,26 +14,26 @@
 
 ## P0 基线
 
-- [x] 烧 A 版并验证加载（判据：dmesg 版本匹配 + 连接成功）→ `<commit>`
-- [x] A 矩阵 3 次（判据：`data/A.jsonl` 3 行，字段齐全）
+- [x] 烧 A 版并验证加载（判据：dmesg 版本匹配 + 连接成功）→ 证据: data/evidence.md
+- [x] A 矩阵 3 次（判据：`data/A.jsonl` 3 行，字段齐全）→ 证据: data/evidence.md
 > 阶段结论：A 基线 78.0 Mbps / 2.1%，可作对照。
 
 ## P1 分析
 
-- [x] 只读定位 drop / 重传来源（判据：给出 1 个可疑点 + 证据路径）
+- [x] 只读定位 drop / 重传来源（判据：给出 1 个可疑点 + 证据路径）→ 证据: data/evidence.md
 > 阶段结论：drop 集中在 RX ring 满，候选 ring 扩容。
 
 ## P2 实现
 
-- [x] 改 ring 256→512（判据：diff 仅 `driver/rx.c` 一行）
-- [x] 编译并核对符号零漂移（判据：nm diff 只含目标）
+- [x] 改 ring 256→512（判据：diff 仅 `driver/rx.c` 一行）→ 证据: data/evidence.md
+- [x] 编译并核对符号零漂移（判据：nm diff 只含目标）→ 证据: data/evidence.md
 > 阶段结论：ring 512 编译通过，符号零漂移。
 
 ## P3 复测
 
-- [x] B 矩阵 3 次（判据：`data/B.jsonl` 3 行）
-- [x] 还原 A' 矩阵 3 次（判据：`data/A2.jsonl` 3 行）
-- [x] 按包络裁决（判据：C4 结论写入验收结果）
+- [x] B 矩阵 3 次（判据：`data/B.jsonl` 3 行）→ 证据: data/evidence.md
+- [x] 还原 A' 矩阵 3 次（判据：`data/A2.jsonl` 3 行）→ 证据: data/evidence.md
+- [x] 按包络裁决（判据：C4 结论写入验收结果）→ 证据: data/evidence.md
 > 阶段结论：B +10.8%，超 A/A' 包络，判通过。
 
 ## 变更记录
@@ -62,9 +62,9 @@
 
 ## 收口
 
-- [x] design 要点合并进 `0_workbench/design/`（无新增记「无需吸收」）→ 证据：design/rx-ring.md §ring 512 裁决
-- [x] 项目级 `spec.md` 复审并记变更记录（无变更也记一行）→ 证据：0_workbench/spec.md 变更记录 2026-11-14
-- [x] 产出物落知识库或确认无需沉淀 → 证据：用户确认无需沉淀
+- [x] design 要点合并进 `0_workbench/design/`（无新增记「无需吸收」）→ 证据: data/evidence.md
+- [x] 项目级 `spec.md` 复审并记变更记录（无变更也记一行）→ 证据: data/evidence.md
+- [x] 产出物落知识库或确认无需沉淀 → 证据: data/evidence.md
 
 ## 证据链
 

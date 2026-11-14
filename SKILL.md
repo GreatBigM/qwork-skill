@@ -1,12 +1,12 @@
 ---
 name: qwork
-description: 项目任务管理（workbench）：新建/修改/接手 change，四要素（spec/design/tasks/check）落地，验收→吸收 design→更新项目级 spec→归档闭环，维护 0_workbench 结构与进度；也用于查任务进度、初始化 workbench、把产出沉淀到知识库。
-version: 4.6.0
+description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
+version: 4.6.1
 category: knowledge
 metadata:
   agent:
     triggers: [qwork, workbench, change, 新建任务, 闭环, 验收, 归档, spec, design吸收, 四要素, 接手, 进度]
-    related_skills: [adb-tftp, serial-tftp]
+    related_skills: [adb-tftp, serial-tftp, qwiki]
 ---
 
 # 项目任务管理（workbench）
@@ -95,20 +95,20 @@ metadata:
 
 ## §4 闭环
 
-1. **先自查 tasks 实际状态**（不采信「都打勾了」）：确认有「收口」段且三项都在；`[ ]` 但同行有阻塞说明 → 转 `[!]` 并补解除条件；`[x]` 无证据也算未完成；收口段未勾 = tasks 未完。再对照 check **逐条跑**（每条须是可执行命令 + 期望结果，或明确标注人工判定；散文条目先补）；实测数字回填 tasks「验收结果」，❌ 照实写（不许只在 check 里写结论）。
+1. **先自查 tasks 实际状态**（不采信「都打勾了」）：确认有「收口」段且三项都在；`[ ]` 但同行有阻塞说明 → 转 `[!]` 并补解除条件；`[x]` 无证据也算未完成（`--close` 要求每个 `[x]` 有 `→` + 用户确认日期 / 存在的证据路径 / 存在的 commit hash 三选一）；收口段未勾 = tasks 未完。再对照 check **逐条跑**（每条须是可执行命令 + 期望结果，或明确标注人工判定；散文条目先补）；实测数字回填 tasks「验收结果」，❌ 照实写（不许只在 check 里写结论）。`--close` 会拒绝含 ❌ 却未走证伪留档的 change。
 2. design 要点**合并**进 `0_workbench/design/` 现有章节（末尾标 `> 来源: <change>`），不堆文件（对应 tasks 收口段第 1 项）。
 3. **强制**复审项目级 `spec.md` 全文：新增约束/天花板/配置 → 更新并在「变更记录」记一行（不是「按需」；对应收口段第 2 项）。
 4. 产出物落知识库产出区；路径、命名与登记按知识库侧规则（本 skill 不定义）。**本机无知识库约定时先问用户产出放哪（或确认无需沉淀），不自创目录**（「无约定」= 本机没有可发现的知识库管理技能或目录规则；有则按其规则执行；对应收口段第 3 项）。
-5. **归档**（tasks 全勾含收口段之后）：`python3 <skill-dir>/tools/qwork-archive.py <change>`（默认先过 close 门；被跟踪走 `git mv`，并自动把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，复核无 untracked；`--dry-run` 预演，`--commit` 提交）。手工等价：`mkdir -p archive` → `git ls-files` 判断跟踪 → `git mv` → `git status` 复核 `data/**` 是否因路径变化变 untracked 并同步 ignore。
+5. **归档**（tasks 全勾含收口段之后）：`python3 <skill-dir>/tools/qwork-archive.py <change>`（默认先过 close 门；被跟踪走 `git mv`，并自动把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，复核无 untracked；`--dry-run` 预演，`--commit` 提交）。`--commit` 只提交 `archive/<name>` + 变更过的 `.gitignore`；项目级 spec/design 的收口改动须先单独提交，否则归档 commit 不包含它们。手工等价：`mkdir -p archive` → `git ls-files` 判断跟踪 → `git mv` → `git status` 复核 `data/**` 是否因路径变化变 untracked 并同步 ignore。
 6. **commit**：代码改动单独提交；workbench 文档（含归档移动与 `.gitignore`）用 `qwork-archive --commit` 提交，或与代码一并提交；不 push，提交信息建议 `<change>: 归档收口`。纯文档 change 把证据链写进 tasks 结尾：文件清单 + `git diff --stat <范围>` + 核验输出摘要（如 `report.sh → pilot-ok，9B`）。
 
 **tasks 收口段（三项全勾才算完结）**：① design 要点吸收 ② 项目级 spec 复审 + changelog ③ 产出落库/确认无需；加上全部施工任务 `[x]` 且有证据、每个 `C` 在「验收结果」有行、数据回填，才算 tasks 全勾。`qwork-check --close` 会卡「收口段缺失/仍有 `[ ]`」；缺段或未勾不得归档。**tasks 全勾 = change 完结，归档只是移动，不另设进度表。**
 
 > 执行会话/子代理回报闭环时，`[x]` 是自报不是证据——先跑**核验三查**（源码 commit / 知识库沉淀 / 归档），三查不过不算闭环；命令见 `references/execution-handoff.md` §五。
 
-> **阻塞收口**（阻塞本身是结论，如工具缺失/环境不可用）：原为 `[ ]` 的阻塞任务先改 `[!]`（状态更正，不算篡改）；spec 顶部标 `> ⚠️ 阻塞收口：<一句结论>`；tasks 写「未验证项 + 解除条件」，验收结果记 `⚠️ 阻塞交付`；**经用户确认后可归档，但不得写成通过**。
+> **阻塞收口**（阻塞本身是结论，如工具缺失/环境不可用）：原为 `[ ]` 的阻塞任务先改 `[!]`（状态更正，不算篡改）；spec 顶部标 `> ⚠️ 阻塞收口：<一句结论>`；tasks 写「未验证项 + 解除条件」，验收结果记 `⚠️ 阻塞交付`，并写 `用户确认: 用户 YYYY-MM-DD`（close 门要求确认日期）；**经用户确认后可归档，但不得写成通过**。
 
-> 证伪/废弃：四要素照留，spec 顶部标 `> ⚠️ 证伪，状态: 拒绝`，design 加 §证伪记录（SCHEMA §二）。先干后补四要素标 `> retroactive`。
+> 证伪/废弃：四要素照留，spec 顶部标 `> ⚠️ 证伪，状态: 拒绝`，design 加 §证伪记录（SCHEMA §二）；tasks 验收结果写 `❌ 未通过（证伪）` + `最终：❌ 未通过`，close 门才放行归档。先干后补四要素标 `> retroactive: YYYY-MM-DD 已施工，归档时补写`（机检标记）。
 
 ## §5 接手断点 change
 
@@ -119,7 +119,7 @@ metadata:
 
 ## §6 执行载体与交接
 
-- **对话分离**：规划会话产出四要素；执行会话**只读四要素 + `data/`**（spec/design/tasks/check 全读、只读），**只写 `tasks.md` 与 `data/`**；不得改 spec/design/check，遇阻塞即退出。两对话只传工件（文件），不传聊天历史。
+- **对话分离**：规划会话产出四要素；执行会话**只读** spec/design/check 与 `data/`，对 tasks **只写执行字段**——勾选、阶段结论、测试数据、实测值、判定、收口勾选与证据；不得改 tasks 的阶段结构/判据，不得改 spec/design/check，遇阻塞即退出。判据/阈值有误 → 停，回报建议，由规划会话改。两对话只传工件（文件），不传聊天历史。
 - **派发就绪自检（派单前必过）**：先跑 `python3 <skill-dir>/tools/qwork-check.py <change> --dispatch`（机器查 ID/覆盖/接手须知），再人工过八问：① 执行者要读哪些文件、各自是否自足？② 第一条任务、第一条命令是什么？③ 每个任务的完成判据是否可观察？④ 每个指标的基线/目标/测量口径在哪？⑤ 环境/设备/权限从哪来？⑥ 什么绝对不能改、卡住时谁拍板（决策权）？⑦ 什么条件启动、什么条件停止/退回规划？⑧ 做完交什么、按什么格式回报？——任一答成「在之前的对话里」或「执行者自己判断」，就是没冻结，先补再派。
 - **载体二选一**：新窗口执行会话，或子代理（主对话决策，子代理实测）。子代理按回执格式带回数据与建议（证据给路径/关键读数），**不 commit、不归档、不写知识库**——提交由主对话核验后完成并回填 hash；独立执行会话可按 §3 每阶段自行 commit。方向性决策留主对话。
 - **一代理一里程碑**：编译+烧录+长稳整包必超时；按「烧 B + 短矩阵」「B 长稳」「烧 A + 复测」拆，靠落盘 `change/data/` 接力；给现成 IP/通道，禁止探索。
@@ -144,4 +144,4 @@ metadata:
 
 ## 支持文件清单
 
-`SKILL.md`、`SCHEMA.md`、`CHANGELOG.md`、`templates/`、`references/`、`examples/`、`tools/`；安装面以 `install.sh` 的 `INSTALL_FILES`/`INSTALL_DIRS` 为单一清单。
+`SKILL.md`、`SCHEMA.md`、`CHANGELOG.md`、`templates/`、`references/`、`examples/`、`tools/`。源仓库的 `install.sh` 按此清单安装；安装副本不含 `install.sh`。

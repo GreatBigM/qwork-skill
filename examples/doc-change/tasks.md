@@ -14,19 +14,19 @@
 
 ## P1 盘点
 
-- [x] 记录 3 条命令现状（判据：各跑一次，退出码与耗时进 `data/baseline.txt`）
+- [x] 记录 3 条命令现状（判据：各跑一次，退出码与耗时进 `data/baseline.txt`）→ 证据: data/evidence.md
 > 阶段结论：3 条命令可复现，基线 25 min，失效链接 2 个。
 
 ## P2 改写
 
-- [x] `docs/build.md` 参数对齐（判据：diff 只含参数与输出说明）
-- [x] `docs/quickstart.md` 命令与链接修正（判据：C2 输出 `0 broken`）
+- [x] `docs/build.md` 参数对齐（判据：diff 只含参数与输出说明）→ 证据: data/evidence.md
+- [x] `docs/quickstart.md` 命令与链接修正（判据：C2 输出 `0 broken`）→ 证据: data/evidence.md
 > 阶段结论：两份文档已对齐，链接 0 broken，待干净容器复跑。
 
 ## P3 验证
 
-- [x] 干净容器逐条执行（判据：C1/C3/C4 通过）
-- [x] 独立验收（判据：验收人按 check 复跑并签字）
+- [x] 干净容器逐条执行（判据：C1/C3/C4 通过）→ 证据: data/evidence.md
+- [x] 独立验收（判据：验收人按 check 复跑并签字）→ 证据: data/evidence.md
 > 阶段结论：干净容器全过，验收人复跑通过；总耗时 14 min。
 
 ## 变更记录
@@ -56,9 +56,9 @@
 
 ## 收口
 
-- [x] design 要点合并进 `0_workbench/design/`（无新增记「无需吸收」）→ 证据：design/build.md §命令与耗时
-- [x] 项目级 `spec.md` 复审并记变更记录（无变更也记一行）→ 证据：0_workbench/spec.md 变更记录 2026-11-14
-- [x] 产出物落知识库或确认无需沉淀 → 证据：用户确认无需沉淀
+- [x] design 要点合并进 `0_workbench/design/`（无新增记「无需吸收」）→ 证据: data/evidence.md
+- [x] 项目级 `spec.md` 复审并记变更记录（无变更也记一行）→ 证据: data/evidence.md
+- [x] 产出物落知识库或确认无需沉淀 → 证据: data/evidence.md
 
 ## 证据链
 

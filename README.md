@@ -40,6 +40,8 @@ mkdir -p ~/.hermes/skills/qwork
 cp qwork-skill/SKILL.md ~/.hermes/skills/qwork/
 cp -r qwork-skill/templates ~/.hermes/skills/qwork/
 cp -r qwork-skill/references ~/.hermes/skills/qwork/
+cp -r qwork-skill/examples ~/.hermes/skills/qwork/
+cp -r qwork-skill/tools ~/.hermes/skills/qwork/
 cp qwork-skill/SCHEMA.md ~/.hermes/skills/qwork/   # 宪法，不可省
 cp qwork-skill/CHANGELOG.md ~/.hermes/skills/qwork/   # 版本历史（install.sh 同样拷贝）
 # ZCode: cp -r 到 ~/.zcode/skills/qwork/（同样别漏 SCHEMA.md 与 CHANGELOG.md）
@@ -66,10 +68,10 @@ $EDITOR ~/.dsh/skills/qwork/references/local/<主题>.md
 # 新建 change：
 mkdir -p 0_workbench/change/<change_name>/data
 # 依次写四要素（确认顺序：spec → check → design → tasks）：
-#   spec.md   ← 做成什么样（成功标准量化表：维度/基线/目标 + 约束）
+#   spec.md   ← 做成什么样（成功标准量化表：ID/基线/目标 + 约束）
+#   check.md  ← 怎么验收（C 项表：ID/spec/方法/判定；阈值引 spec）
 #   design.md ← 怎么做（事实约束 → 现状/目标路径 → 决策 → 观测点）
 #   tasks.md  ← 执行唯一台账（阶段/顺序/判据 + commit、阶段结论、测试数据、验收结果、收口段）
-#   check.md  ← 怎么验收（C 项表：ID/spec/方法/判定；阈值引 spec）
 # 原始日志放 change/<name>/data/，数字结论回填 tasks
 # 闭环：验收 → tasks 收口段三项（design 吸收 / 项目 spec 复审 / 产出沉淀）→ 移 archive/
 ```
@@ -102,7 +104,7 @@ mkdir -p 0_workbench/change/<change_name>/data
 ## 工具（随安装下发）
 
 ```bash
-# 派发前：四文件、S/C 覆盖、接手须知八字段
+# 派发前：四文件、S/C 覆盖、接手须知九字段
 python3 tools/qwork-check.py 0_workbench/change/<name> --dispatch
 
 # 收口前：任务清零、C 结果行、阻塞收口、项目 spec changelog
@@ -118,7 +120,11 @@ python3 tools/qwork-status.py .            # 或任意子目录；--json
 
 > `tools/` 在仓库根或安装后的 skill 目录（如 `~/.dsh/skills/qwork/tools/`），不是用户项目根；装好后把命令里的 `tools/` 换成 `<skill-dir>/tools/`。
 >
-> `qwork-check` 旧格式只报 WARNING（`--strict` 才失败）；`qwork-archive` 不过门不动文件，移动失败会回滚。
+> `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。
+>
+> 旧格式：spec 顶部标 `> retroactive` 的存量按 WARNING 降级；未标的按新格式报错（先标标记再补结构，不靠删表头绕过）。
+>
+> `qwork-archive --commit` 只提交 `archive/<name>` + 变更过的 `.gitignore`；项目级 spec/design 的收口改动先单独提交。commit 失败会回滚移动与 `.gitignore`，不留半归档状态。
 
 ## 仓库结构
 

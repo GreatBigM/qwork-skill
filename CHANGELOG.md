@@ -2,6 +2,27 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 4.6.1 (2026-11-14)
+
+### Fixed（门禁可信度与归档边界）
+
+- **close 不再放过失败验收**：验收结果含 `❌` 必须走证伪留档（spec 顶部 `> ⚠️ 证伪，状态: 拒绝` + design §证伪记录 + tasks `最终：❌ 未通过`），否则 error；`⚠️` 必须走阻塞收口并带用户确认日期。
+- **`[x]` 证据机检**：每条 `[x]` 必须带 `→`，后接 `用户确认: 用户 YYYY-MM-DD` / `证据: <存在的路径>` / `commit <存在的 hash>` 三选一；占位、假 hash、假路径、空证据均 error。`--close` 对全部施工任务与收口段逐条检查。
+- **实测 vs 目标**：`✅` 的「实测」不能为空或占位，可解析的数值/单位会与 spec 目标比较（如 `≤15 min` vs `25 min` 报错）。
+- **证伪/阻塞/legacy**：`❌ 未通过（证伪）`、`⚠️ 阻塞交付` 按 SCHEMA 接受；legacy 只认 spec 顶部 `> retroactive` 标记，不再靠缺表头推断，删表头不能绕过。
+- **项目级 spec**：只在「## 变更记录」段内按表格行匹配 change 名（独立单元格），正文提及不算；示例改为表行。
+- **archive**：`--commit` 只提交 `archive/<name>` + 变更过的 `.gitignore`，删目录级 fallback；commit 移入事务，失败回滚移动/`.gitignore`/暂存区；成功提示不再先于 commit 打印。
+- **status**：终态改为调用 close 门，门不过显示 `待收口（close 门 N error）`，不再自报「可归档」。
+- **check**：修复入口与各检查器重复报「文件缺失」；`--dispatch` 不再把「未开始任务」当 warning，新 change 的 `--dispatch --strict` 可通过。
+- **examples/templates**：黄金样例补 `data/evidence.md` 与 `→` 证据；check 判定口径去掉 spec 阈值副本；SCHEMA 验收表改为 `ID` 表头、项目 spec changelog 改为表行。
+
+### Tests
+
+- 新增 `tests/test_tools.py`（pytest，11 项）：close 证据/❌/数值比较/项目 spec 表行、status 调门、dispatch strict、archive 提交边界与回滚；`python3 -m pytest -q tests/test_tools.py` → 11 passed。
+- `tests/tools.md` 补 4.6.1 记录；`tests/probes.md` 标注冷启动探针待复跑（4.6.1 门禁语义已变）。
+
+- 版本 4.6.0 → 4.6.1
+
 ## 4.6.0 (2026-11-14)
 
 ### Changed（tasks 成为执行唯一台账）

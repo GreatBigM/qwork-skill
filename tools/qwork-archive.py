@@ -6,8 +6,9 @@
 
 - 默认先跑 `qwork-check.py --close`，不过不移动；`--force` 跳过门（不推荐）。
 - 被 git 跟踪用 `git mv`，否则普通移动；移动后把 .gitignore 的 `change/` 规则镜像到 `archive/`。
-- `--commit` 只提交本次归档相关路径；默认只打印提交命令。
-- 失败会回滚移动与 .gitignore。
+- `--commit` 只提交本次归档相关路径（`archive/<name>` + 变更过的 `.gitignore`），
+  不用目录级 fallback；commit 失败会回滚移动与 .gitignore。
+- 项目级 spec/design 的收口改动请先单独提交，archive 不代提交。
 """
 from __future__ import annotations
 
@@ -182,21 +183,22 @@ def print_gate_failure(data: dict, raw_stdout: str) -> None:
             print(raw_stdout.strip(), file=sys.stderr)
 
 
-def commit(root: Path, change: Path, target: Path, name: str) -> str:
-    rel_old = change.relative_to(root).as_posix()
-    rel_new = target.relative_to(root).as_posix()
-    gi = root / ".gitignore"
-    paths = [rel_old, rel_new]
-    if gi.is_file():
-        paths.append(".gitignore")
-    p = git(root, "add", "-A", "--", *paths, check=False)
-    if p.returncode != 0:
-        fallback = ["0_workbench"]
-        if gi.is_file():
-            fallback.append(".gitignore")
-        git(root, "add", "-A", "--", *fallback)
-    if git(root, "diff", "--cached", "--quiet", check=False).returncode == 0:
+def commit(root: Path, rel_old: str, rel_new: str, ignore_changed: bool, name: str) -> str:
+    """只提交本次归档相关路径；commit 失败由调用方回滚。"""
+    add_paths = [rel_new]
+    if ignore_changed and (root / ".gitignore").is_file():
+        add_paths.append(".gitignore")
+    git(root, "add", "-A", "--", *add_paths)
+    staged = [line.strip() for line in git(root, "diff", "--cached", "--name-only").stdout.splitlines() if line.strip()]
+    if not staged:
         return ""
+    allowed = {rel_old, rel_new, ".gitignore"}
+    prefixes = (rel_old + "/", rel_new + "/")
+    extra = [p for p in staged
+             if p not in allowed and not any(p.startswith(pre) for pre in prefixes)]
+    if extra:
+        raise Fail("暂存区含归档范围外的文件，拒绝提交：\n  " + "\n  ".join(extra[:10]))
+    # 已验证暂存区只含归档范围；不带 pathspec，保留 git mv 的 rename 记录
     git(root, "commit", "-m", f"{name}: 归档收口")
     return git(root, "rev-parse", "--short", "HEAD").stdout.strip()
 
@@ -219,6 +221,11 @@ def main() -> int:
 
         code, data, raw = run_gate(change)
         gate_ok = code == 0
+        verdicts = data.get("verdicts") or {}
+        if gate_ok and any(verdicts.values()):
+            extra = "（证伪留档）" if data.get("rejected") else ""
+            print(f"判定: {verdicts.get('pass', 0)} ✅ / {verdicts.get('fail', 0)} ❌ / "
+                  f"{verdicts.get('blocked', 0)} ⚠️{extra}")
         if not gate_ok:
             print_gate_failure(data, raw)
             if not args.force:
@@ -248,6 +255,7 @@ def main() -> int:
 
         target.parent.mkdir(parents=True, exist_ok=True)
         backup = ignore_text
+        ignore_existed = (root / ".gitignore").is_file()
         moved = False
         try:
             move(root, change, target, is_tracked)
@@ -261,29 +269,37 @@ def main() -> int:
             check = untracked_under(root, rel_new)
             if check:
                 raise Fail("复核失败，archive 下仍有 untracked：\n  " + "\n  ".join(check[:10]))
+
+            ignore_changed = read_ignore(root)[1] != backup
+            h = ""
+            if args.commit:
+                h = commit(root, rel_old, rel_new, ignore_changed, name)
+
+            print(f"✅ 已归档：{rel_old} → {rel_new}")
+            if additions:
+                print("   .gitignore 镜像：")
+                for a in additions:
+                    print(f"   + {a}")
+            if args.commit:
+                if h:
+                    print(f"✅ 已提交 {h}：{name}: 归档收口")
+                else:
+                    print("ℹ️ 没有可提交的变更")
+            else:
+                gi_hint = "0_workbench .gitignore" if (root / ".gitignore").is_file() else "0_workbench"
+                print(f"   下一步：git add -A {gi_hint} && git commit -m "
+                      f"\"{name}: 归档收口\"")
+                print("   （或加 --commit 让本工具提交）")
+            return 0
         except Exception:
             if moved:
                 move_back(root, change, target, is_tracked)
-            write_ignore(root / ".gitignore", backup)
-            raise
-
-        print(f"✅ 已归档：{rel_old} → {rel_new}")
-        if additions:
-            print("   .gitignore 镜像：")
-            for a in additions:
-                print(f"   + {a}")
-        if args.commit:
-            h = commit(root, change, target, name)
-            if h:
-                print(f"✅ 已提交 {h}：{name}: 归档收口")
+            if ignore_existed or backup:
+                write_ignore(root / ".gitignore", backup)
             else:
-                print("ℹ️ 没有可提交的变更")
-        else:
-            gi_hint = "0_workbench .gitignore" if (root / ".gitignore").is_file() else "0_workbench"
-            print(f"   下一步：git add -A {gi_hint} && git commit -m "
-                  f"\"{name}: 归档收口\"")
-            print("   （或加 --commit 让本工具提交）")
-        return 0
+                (root / ".gitignore").unlink(missing_ok=True)
+            git(root, "reset", "-q", "--", rel_old, rel_new, ".gitignore", check=False)
+            raise
     except Fail as exc:
         print(f"❌ {exc}", file=sys.stderr)
         return 1

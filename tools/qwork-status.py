@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ FENCE = re.compile(r"^\s*(```|~~~)")
 CHECKBOX = re.compile(r"^\s*-\s+\[( |x|X|!)\]\s+(.*)$")
 SPEC_ROW = re.compile(r"^\|\s*(S\d+)\s*\|", re.M)
 CHECK_ROW = re.compile(r"^\|\s*(C\d+)\s*\|", re.M)
+CHECK = Path(__file__).with_name("qwork-check.py")
 
 
 def find_workbench(start: Path) -> Path | None:
@@ -73,6 +75,20 @@ def c_ids(text: str) -> set[str]:
     return set(CHECK_ROW.findall(text))
 
 
+def close_gate(change: Path) -> tuple[int, list[str]] | None:
+    """终态复用 close 门，避免 status 说可归档而 check FAIL。"""
+    if not CHECK.is_file():
+        return None
+    p = subprocess.run([sys.executable, str(CHECK), str(change), "--close", "--json"],
+                       text=True, capture_output=True)
+    try:
+        data = json.loads(p.stdout)
+    except json.JSONDecodeError:
+        detail = (p.stderr or p.stdout).strip()
+        return p.returncode, [detail] if detail else []
+    return p.returncode, list(data.get("errors") or [])
+
+
 def inspect(change: Path, archived: bool, wb: Path) -> dict:
     files = {n: (change / n).is_file() for n in FOUR}
     missing = [n for n, ok in files.items() if not ok]
@@ -114,7 +130,15 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
     elif not spec_logged:
         state, action = "待收口（项目 spec 未记）", "补 spec changelog"
     else:
-        state, action = "可归档", "跑 qwork-archive"
+        gate = close_gate(change)
+        if gate is None:
+            state, action = "待收口（缺 qwork-check.py）", "补 tools/qwork-check.py"
+        elif gate[0] == 0:
+            state, action = "可归档", "跑 qwork-archive"
+        else:
+            errors = gate[1]
+            first = errors[0] if errors else "close 门未过"
+            state, action = f"待收口（close 门 {len(errors) or 1} error）", first
 
     return {
         "name": change.name,

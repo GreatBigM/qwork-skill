@@ -2,7 +2,7 @@
 
 > **定位**：SCHEMA = 做成什么样（workbench 任务体系目标态：目录结构/四要素边界/流转规则/产出规范）；SKILL = 怎么做（操作流程）。平级互补，SKILL 的操作实现本文定义的目标态。
 > 2026-07-24 讨论定稿。任务体系跟代码走，知识产出留在知识库。
-> Last updated: 2026-11-14（v4.0.0：`data/` 纳入结构、`[!]` 与命名约定、§四 只保留交接边界、§七 改为新项目初始化清单）
+> Last updated: 2026-11-14（v4.6.1：完成证据机检、证伪/阻塞收口、项目级 spec 表行、archive 提交范围）
 
 ## 一、边界划分
 
@@ -64,6 +64,11 @@ AGENTS.md 在代码仓顶层——无论 workbench 是否存在，AI 都能独�
 ### 任务状态与命名约定
 
 - **状态符号**：`[ ]` 未做 / `[x]` 完成（附 commit 短 hash 或证据）/ `[!]` 阻塞——同行写明阻塞原因与解除条件。未解除的 `[!]` **不得以「通过」归档**；按 §二「阻塞收口」经用户确认后可归档，并记未验证项。
+- **完成证据（`--close` 机检）**：每个 `[x]` 必须有 `→`，后接三类之一：
+  1. `用户确认: 用户 YYYY-MM-DD`（用户验收/确认无需沉淀/确认阻塞收口）；
+  2. `证据: <path>`（相对 change 或项目根，文件必须存在；内容含「用户确认」或「确认无需」可放行非文件确认）；
+  3. `commit <7-40 位 hex>`（git 仓库中必须存在该提交）。
+  空、`<...>` 占位、假 hash、假路径、无 `→` 均判 error；`[!]` 不要求 `→`，但阻塞收口必须有确认日期。
 - **change 命名**：kebab-case（小写 + 连字符，2–4 段），建议 `<主题>-<类型>`（如 `rx-prealloc-ab`、`partition-fix`）；不强制动词开头、不带日期；新建前先查 `change/` 与 `archive/`，同主题先问「并入原 change 还是另立」。
 - **数据落点**：原始日志/脚本输出/实验矩阵放 `change/<name>/data/`，默认不入库（ignore 规则覆盖 `change/` 与 `archive/` 两处；存量已入库的不强制迁出）；数字结论（基线、实测、判定）回填 tasks，不在数据文件与 tasks 之间留两套口径。
 
@@ -79,7 +84,7 @@ AGENTS.md 在代码仓顶层——无论 workbench 是否存在，AI 都能独�
 阻塞本身即交付结论时（如外部工具缺失、环境不可用），既不是「未完成」也不是「证伪」：
 
 - spec.md 顶部 `> ⚠️ 阻塞收口：<一句话结论>`
-- tasks.md 对应任务用 `[!]`（原为 `[ ]` 的阻塞任务先改符号，属状态更正），同行写「未验证项 + 解除条件」；验收结果记 `⚠️ 阻塞交付`
+- tasks.md 对应任务用 `[!]`（原为 `[ ]` 的阻塞任务先改符号，属状态更正），同行写「未验证项 + 解除条件」；验收结果记 `⚠️ 阻塞交付`，并写 `用户确认: 用户 YYYY-MM-DD`（`--close` 要求确认日期）
 - 经用户确认后可归档；**不得把阻塞写成通过**，不得隐藏未验证项
 
 ### 变更管理（改需求/改方案）
@@ -91,7 +96,8 @@ AGENTS.md 在代码仓顶层——无论 workbench 是否存在，AI 都能独�
 
 ### retroactive（先干后补）
 
-change 已施工再补四要素时，spec.md 顶部标 `> retroactive：已施工，归档时补写`。不鼓励作为常规，但容忍。
+change 已施工再补四要素时，spec.md 顶部标 `> retroactive: 2026-11-14 已施工，归档时补写`（`^> retroactive` 是机检标记）。不鼓励作为常规，但容忍。
+旧格式 change 没有该标记时，`--close` 按新格式报错；先标标记再补结构，不要靠删表头绕过。
 
 ### tasks.md 执行台账约定
 
@@ -110,9 +116,9 @@ change 已施工再补四要素时，spec.md 顶部标 `> retroactive：已施�
 | 吞吐 | 78 Mbps | 115 Mbps | ≥94 |
 
 ## 验收结果
-| 维度 | 目标(spec) | 实测 | 判定 |
-| 吞吐 | ≥94 | 78 | ❌ |
-| 稳定性 | 0 crash | 0 | ✅ |
+| ID | 目标(spec) | 实测 | 判定 |
+| C1 | S1: ≥94 Mbps | 78 Mbps | ❌ 未通过（证伪） |
+| C2 | S2: 0 crash | 0 crash | ✅ |
 最终：❌ 未通过（证伪，详见 design §证伪记录）
 ```
 
@@ -140,7 +146,7 @@ change/ 施工中
 
 > 归档检查清单（**tasks 全勾即完结，归档只是移动**）：① **tasks 全部 `[x]`**——含「收口」段三项（design 吸收 / 项目 spec 复审+changelog / 产出落库或确认无需），每项有证据；阻塞项为**经用户确认的阻塞收口**（记 `[!]` + 未验证项，视同收口），无其他未解除 `[!]` ② 每个 `C` 在「验收结果」有行、测试数据已回填 ③ 四要素已迁 `archive/`。`qwork-check --close` 会卡 ①②；缺收口段或收口段有 `[ ]` 不得归档。
 
-> 归档移动：优先 `python3 <skill-dir>/tools/qwork-archive.py <change>`（过 close 门、`git mv`、把 `.gitignore` 的 `change/` 规则镜像到 `archive/`、复核无 untracked；`--commit` 提交）。手工语义：`git ls-files` 判断跟踪 → `git mv` → `git status` 复核 ignore（细则见 SKILL §4 第 5 步）。
+> 归档移动：优先 `python3 <skill-dir>/tools/qwork-archive.py <change>`（过 close 门、`git mv`、把 `.gitignore` 的 `change/` 规则镜像到 `archive/`、复核无 untracked；`--commit` 只提交 `archive/<name>` + 变更过的 `.gitignore`，项目级 spec/design 改动须先单独提交）。手工语义：`git ls-files` 判断跟踪 → `git mv` → `git status` 复核 ignore（细则见 SKILL §4 第 5 步）。
 
 ### 派发与回执（编排闭环）
 
@@ -170,12 +176,15 @@ workbench 面向任务段：四要素定义任务内部的工程流转。实践�
 
 ```markdown
 ## 变更记录
-2026-07-24 | wifi_driver_refactor | RX 天花板从 52Mbps → 82Mbps
-2026-07-20 | partition_fix       | 约束分区大小，禁止手动 resize
+
+| 日期 | change | 摘要 |
+|------|--------|------|
+| 2026-07-24 | wifi_driver_refactor | RX 天花板从 52Mbps → 82Mbps |
+| 2026-07-20 | partition_fix | 约束分区大小，禁止手动 resize |
 ```
 
 - design 吸收方案后，更新项目级 spec 约束
-- **归档必检**：每次 change 归档时强制复审项目级 spec 全文（流转规则第 2 步），判断约束/天花板/配置是否要新增或更新，并在 changelog 记一行。不依赖"按需"想起——漏更新 spec 即归档未完成
+- **归档必检**：每次 change 归档时强制复审项目级 spec 全文（流转规则第 2 步），判断约束/天花板/配置是否要新增或更新，并在「变更记录」表加一行。`--close` 只在「## 变更记录」段内按表格行匹配 change 名（独立单元格）；正文提到不算。不依赖"按需"想起——漏更新 spec 即归档未完成
 
 ## 六、design 吸收原则
 
