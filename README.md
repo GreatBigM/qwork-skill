@@ -66,10 +66,10 @@ $EDITOR ~/.dsh/skills/qwork/references/local/<主题>.md
 # 新建 change：
 mkdir -p 0_workbench/change/<change_name>/data
 # 依次写四要素（确认顺序：spec → check → design → tasks）：
-#   spec.md   ← 规格：要什么（成功标准量化表：维度/基线/目标）
-#   check.md  ← 验收：怎么算完（可执行命令 + 判定口径，阈值引 spec）
-#   design.md ← 设计：怎么改（事实约束 → 现状 → 目标 → 核心设计 → 观测点）
-#   tasks.md  ← 任务：做到哪（分阶段打勾，记 commit hash + 测试数据/验收结果）
+#   spec.md   ← 做成什么样（成功标准量化表：维度/基线/目标 + 约束）
+#   design.md ← 怎么做（事实约束 → 现状/目标路径 → 决策 → 观测点）
+#   tasks.md  ← 怎么组织（阶段/顺序/判据，记 commit hash + 测试数据/验收结果）
+#   check.md  ← 怎么验收（可执行命令 + 判定口径，阈值引 spec）
 # 原始日志放 change/<name>/data/，数字结论回填 tasks
 # 闭环：验收 → design 合并进 design/ → 项目级 spec.md 复审 → 产出落知识库 → 移 archive/
 ```
@@ -80,14 +80,14 @@ mkdir -p 0_workbench/change/<change_name>/data
 
 | 文件 | 内容 | 一句话 |
 |------|------|--------|
-| spec.md | 规格 | 做成什么样、为什么做（成功标准量化表 + 约束） |
-| design.md | 设计 | 为什么这么做、怎么做（决策依据 + 技术路径） |
-| tasks.md | 任务 | 谁做什么、做到哪（每步判据，记 commit/测试数据/验收结果） |
-| check.md | 验收 | 怎么检查、阈值多少（命令 + 判定口径） |
+| spec.md | 规格 | 做成什么样（成功标准量化表 + 约束） |
+| design.md | 设计 | 怎么做（技术路径 + 决策依据） |
+| tasks.md | 任务 | 怎么组织（阶段/顺序/判据，记 commit/测试数据/验收结果） |
+| check.md | 验收 | 怎么验收（命令 + 判定口径，阈值引 spec） |
 
 > 原始产物（日志/脚本输出/实验矩阵）放同目录 `data/`；数字结论回填 tasks，不另立第二份口径。
 
-> 四要素的闭环：**spec = 做成什么样 + 为什么做；design = 为什么这么做 + 怎么做；tasks = 谁做什么 + 做到哪；check = 怎么检查 + 阈值多少**。缺一个，执行者就得回问。
+> 四要素的闭环：**spec = 做成什么样；design = 怎么做；tasks = 怎么组织；check = 怎么验收**。缺一个，执行者就得回问。
 
 **铁律**：
 - 标准由 spec 定，方法由 check 给，结果落 tasks——同一信息不两处复述
