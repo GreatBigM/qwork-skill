@@ -306,6 +306,146 @@ def test_close_require_logs_accepts_passing_logs(tmp_path: Path) -> None:
     assert p.returncode == 0, p.stdout + p.stderr
 
 
+def test_close_strict_implies_require_logs(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    p = run(CHECK, str(change), "--close", "--strict", cwd=root)
+    assert p.returncode != 0
+    assert "自动项 C1 缺少 data/check-C1.log" in p.stdout + p.stderr
+    data = change / "data"
+    data.mkdir(exist_ok=True)
+    for cid in ("C1", "C2", "C3", "C4"):
+        (data / f"check-{cid}.log").write_text("$ true\nexit=0\n", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", "--strict", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+
+
+def _add_project_constraint(root: Path, limit: str = "2", unit: str = "成功", condition: str = "每测量段总次数") -> None:
+    spec = root / "0_workbench" / "spec.md"
+    spec.write_text(
+        spec.read_text(encoding="utf-8")
+        + "\n## 约束表\n\n| ID | 指标 | 上限 | 单位 | 条件 |\n"
+          "|----|------|------|------|------|\n"
+          f"| K1 | 重复次数 | {limit} | {unit} | {condition} |\n",
+        encoding="utf-8",
+    )
+
+
+def _add_constraint_check(change: Path, row: str) -> None:
+    spec = change / "spec.md"
+    spec.write_text(
+        spec.read_text(encoding="utf-8")
+        + "\n## 项目约束核对\n\n| 约束ID | 适用 S | 结论 | 说明 |\n"
+          "|--------|--------|------|------|\n"
+        + row
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_close_rejects_project_constraint_violation(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, limit="2")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | S1 目标 3 次 |")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "约束 K1 冲突" in p.stdout + p.stderr
+
+
+def test_close_accepts_project_constraint_met(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, limit="5")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | S1 目标 3 次 |")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+
+
+def test_handoff_placeholder_gate_ignores_shell_redirect(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = change / "tasks.md"
+    text = tasks.read_text(encoding="utf-8")
+    text = text.replace("- 环境/前置：docker 可用", "- 环境/前置：串口 cat < /dev/ttyUSB0", 1)
+    tasks.write_text(text, encoding="utf-8")
+    p = run(CHECK, str(change), "--dispatch", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+    text = text.replace("cat < /dev/ttyUSB0", "<待补>", 1)
+    tasks.write_text(text, encoding="utf-8")
+    p = run(CHECK, str(change), "--dispatch", cwd=root)
+    assert p.returncode == 1
+    assert "占位符" in p.stdout + p.stderr
+
+
+def test_project_constraint_count_requires_condition(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, condition="")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | 3 次 |")
+    p = run(CHECK, str(change), "--dispatch", cwd=root)
+    assert p.returncode == 1
+    assert "次数类指标" in p.stdout + p.stderr
+
+
+def test_close_rejects_measurement_count_over_limit(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, limit="2", unit="次")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | S1 目标 3 次 |")
+    spec = change / "spec.md"
+    spec.write_text(spec.read_text(encoding="utf-8") + "\n## 测量口径\n\n每测量段 3 次取中位数。\n", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "测量口径写 3 次" in p.stdout + p.stderr
+
+
+def test_project_constraint_count_condition_needs_basis(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, condition="每次测试不超过 10 分钟")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | 3 次 |")
+    p = run(CHECK, str(change), "--dispatch", cwd=root)
+    assert p.returncode == 1
+    assert "未写计数基准" in p.stdout + p.stderr
+
+
+def test_close_rejects_template_form_measurement_count(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, limit="2", unit="次")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | S1 目标 3 次 |")
+    spec = change / "spec.md"
+    text = spec.read_text(encoding="utf-8")
+    text = text.replace("测量口径：干净容器；", "测量口径：每测量段 3 次取中位数；", 1)
+    spec.write_text(text, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "测量口径写 3 次" in p.stdout + p.stderr
+
+
+def test_close_unit_mismatch_info_does_not_fail_strict(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root, limit="2", unit="次")
+    _add_constraint_check(change, "| K1 | S1 | 满足 | S1 目标 3 次 |")
+    data = change / "data"
+    data.mkdir(exist_ok=True)
+    for cid in ("C1", "C2", "C3", "C4"):
+        (data / f"check-{cid}.log").write_text("$ true\nexit=0\n", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", "--strict", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "无法确认同量纲" in p.stdout + p.stderr
+
+
+def test_close_requires_constraint_check_when_project_has_table(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root)
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "项目约束核对" in p.stdout + p.stderr
+
+
+def test_close_constraint_change_needs_user_confirmation(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    _add_project_constraint(root)
+    _add_constraint_check(change, "| K1 | S1 | 需变更 | 上限调到 4 次 |")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "用户确认" in p.stdout + p.stderr
+
+
 def test_run_executes_auto_check(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     check = change / "check.md"

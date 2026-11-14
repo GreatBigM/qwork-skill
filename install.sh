@@ -140,7 +140,7 @@ check_one() {
     done
     for d in "${INSTALL_DIRS[@]}"; do
         [ -d "${SRC}/${d}" ] || continue
-        out="$(diff -rq --exclude=local "${SRC}/${d}" "${dest}/${d}" 2>&1 || true)"
+        out="$(diff -rq --exclude=local --exclude=__pycache__ --exclude='*.pyc' --exclude=.pytest_cache "${SRC}/${d}" "${dest}/${d}" 2>&1 || true)"
         if [ -n "$out" ]; then
             printf '%s\n' "$out" | sed 's/^/    ✗ /'
             problems=$((problems + 1))

@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.9.0 (2026-11-14)
+
+### Added
+
+- **项目约束机器门**：项目级 `0_workbench/spec.md` 可写 `## 约束表`（ID/指标/上限/单位/条件）；change spec 必须写 `## 项目约束核对`，逐条列 K 并填 `满足/不适用/需变更`。`qwork-check` 在 dispatch/close 校验：K 必须存在且不重复、每个 K 都要核对；`满足` 仅在 K 的单位出现在 S 目标时按首个数值与上限比较，相对目标/单位不一致/次数类只发 INFO（不阻塞 strict）；`需变更` 必须带 `用户确认: [用户] YYYY-MM-DD`。冲突两条路：永久改约束（`满足` 引用新值）或一次性例外（`需变更` + 确认）。次数类约束的「条件」必须写计数基准，为空/无基准词直接 error；机器抓测量口径的 `N 次` 与上限比较，`不适用` 与次数矛盾也报错。
+- **GitHub Actions CI**：`.github/workflows/ci.yml` 跑 pytest、两份黄金样例 `--close`、`publish-check.py`、`git diff --check`。
+- `tests/test_tools.py` 增 6 项（strict 隐含日志、约束冲突/通过、缺核对段、需变更未确认、单位不一致告警），`46 passed`。
+
+### Changed
+
+- `--close --strict` 现在隐含 `--require-logs`：每个「自动」C 必须有 `data/check-<C>.log` 且含 `exit=0`。`--require-logs` 仍可单独使用；默认（非 strict）行为不变。
+- SKILL 19.8KB/156 行 → 16.8KB/139 行：去掉未解析的 `category`/`metadata.agent.triggers`/`related_skills`，压缩重复的操作说明，细节继续由 SCHEMA、templates 与 references 承载。
+- SCHEMA §五增加「约束表」格式与核对段示例；`templates/spec.md` 增加「项目约束核对」段；README 更新 strict/约束门说明。
+- `install.sh --check` 忽略 `__pycache__`、`*.pyc`、`.pytest_cache`，跑完测试后不再误报安装漂移。
+- SKILL 补：非 git 仓的证据/归档降级；项目骨架缺失（含空 `design/`、无「变更记录」）先补；tasks 开单即建含「收口」段的完整骨架；项目级约束改动单独提交；`--strict` 日志的 `exit=0` 行格式。
+- 接手须知数量统一为「10 项」；约束核对「说明」必填且不能是占位符。
+- `qwork-check --dispatch` 提前 warning 项目骨架缺口（`design/` 空、项目 spec 缺「变更记录」），不再等到 close 才暴露。
+- 新增 `INFO` 级别：相对目标/单位不一致/次数类只提示，不阻塞 `--strict`；避免「合法满足约束却永远过不了 strict」。
+- 接手须知仍含 `<...>` 占位符直接 error；`experiment-playbook` 增加「先过项目约束」一节。
+- 版本 4.8.3 → 4.9.0
+
 ## 4.8.3 (2026-11-14)
 
 ### Fixed

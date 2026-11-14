@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 单元回归
+        run: python -m pytest -q tests/test_tools.py
+      - name: 黄金样例收口门
+        run: |
+          python tools/qwork-check.py examples/doc-change --close
+          python tools/qwork-check.py examples/experiment-change --close
+      - name: 发布面检查
+        run: python scripts/publish-check.py
+      - name: 空白错误
+        run: git diff --check

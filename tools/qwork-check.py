@@ -5,7 +5,7 @@
   python3 tools/qwork-check.py <change-dir> --dispatch [--strict] [--json]
   python3 tools/qwork-check.py <change-dir> --close    [--strict] [--json]
 
-退出码: 0 = 通过；1 = 有 error（--strict 下 warning 也算失败）。
+退出码: 0 = 通过；1 = 有 error（--strict 下 warning 也算失败；--close --strict 同时强制自动项日志）。
 无外部依赖；只读，不改任何文件（git cat-file 只读）。
 """
 from __future__ import annotations
@@ -19,13 +19,16 @@ from pathlib import Path
 
 S_ID = re.compile(r"^S\d+$")
 C_ID = re.compile(r"^C\d+$")
+K_ID = re.compile(r"^K\d+$")
+COUNT_BASIS = re.compile(r"(每(?:个)?(?:测量|测试)?段|每轮|按段|按\s*change|整个\s*change|总次数|总计|全量)")
 STATUS_LINE = re.compile(r"^\s*-\s+\[( |x|X|!)\]\s+(.*)$")
 BLOCKED_HINT = re.compile(r"(BLOCKED_[A-Z0-9_]+|阻塞原因\s*[:：]|等待|无法继续)", re.I)
 UNVERIFIED = re.compile(r"(未验证|待验证|未完成|待补)", re.I)
-PLACEHOLDER = re.compile(r"<[^>]+>")
+PLACEHOLDER = re.compile(r"<[^<>\s][^<>]{0,23}>")
 FENCE = re.compile(r"^\s*(```|~~~)")
 HASH = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+USER_CONFIRM = re.compile(r"用户确认\s*[:：]\s*(?:用户\s+)?\d{4}-\d{2}-\d{2}")
 NUMERIC = re.compile(r"([-+]?\d+(?:\.\d+)?)\s*([A-Za-z%℃]+)?")
 
 HANDOFF_FIELDS = ("负责人", "必读", "环境", "禁止", "决策权", "启动条件", "停止", "判据", "回报", "交付")
@@ -36,6 +39,7 @@ class Findings:
     def __init__(self) -> None:
         self.errors: list[str] = []
         self.warnings: list[str] = []
+        self.infos: list[str] = []
         self.verdicts = {"pass": 0, "fail": 0, "blocked": 0}
         self.rejected = False
         self.auto_ids: set[str] = set()
@@ -45,6 +49,9 @@ class Findings:
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
+
+    def info(self, msg: str) -> None:
+        self.infos.append(msg)
 
     def ok(self, strict: bool) -> bool:
         return not self.errors and not (strict and self.warnings)
@@ -348,12 +355,14 @@ def check_check(change: Path, spec_ids: dict[str, str] | None, f: Findings, lega
 def check_handoff(tasks: str, f: Findings, legacy: bool) -> None:
     sec = section(tasks, "接手须知")
     if sec is None:
-        msg = "tasks 缺少「接手须知」（新 change 必须填全 9 项）"
+        msg = "tasks 缺少「接手须知」（新 change 必须填全 10 项）"
         if legacy:
             f.warn("legacy（retroactive）：" + msg)
         else:
             f.error(msg)
         return
+    if PLACEHOLDER.search(sec):
+        f.error("接手须知仍有 `<...>` 占位符；执行者无法据此开工")
     for kw in HANDOFF_FIELDS:
         if kw not in sec:
             if kw == "负责人":
@@ -534,6 +543,184 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
                 check_evidence(desc, change, root, f)
 
 
+def check_project_skeleton(change: Path, mode: str, f: Findings) -> None:
+    """dispatch 时提前提示项目骨架缺口；close 时由 check_project_spec 硬判。"""
+    if mode != "dispatch":
+        return
+    parts = change.resolve().parts
+    if "0_workbench" not in parts:
+        return
+    idx = parts.index("0_workbench")
+    root = Path(*parts[: idx + 1])
+    design = root / "design"
+    if not design.is_dir() or not any(design.iterdir()):
+        f.warn("项目级 0_workbench/design/ 缺失或为空：close 会失败，先补骨架")
+    pspec = root / "spec.md"
+    if not pspec.is_file():
+        f.warn("项目级 0_workbench/spec.md 缺失：close 会失败，先补")
+    elif section(read(pspec), "变更记录") is None:
+        f.warn("项目级 spec 缺「变更记录」：close 会失败，先补")
+
+
+def measurement_text(ctext: str) -> str:
+    """兼容 `## 测量口径` 标题与模板里的 `测量口径：...` 普通行。"""
+    sec = section(ctext, "测量口径")
+    if sec is not None:
+        return sec
+    lines = ctext.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip().startswith("测量口径"):
+            out = [line]
+            for nxt in lines[i + 1:]:
+                if re.match(r"^#{1,6}\s+", nxt):
+                    break
+                out.append(nxt)
+            return "\n".join(out)
+    return ""
+
+
+def check_project_constraints(change: Path, spec_ids: dict[str, str] | None,
+                              f: Findings, legacy: bool) -> None:
+    """项目级约束表存在时，要求 change spec 有逐条核对表；满足项做数值上限比较。"""
+    parts = change.resolve().parts
+    if "0_workbench" not in parts:
+        return
+    idx = parts.index("0_workbench")
+    root = Path(*parts[: idx + 1])
+    pspec = root / "spec.md"
+    if not pspec.is_file():
+        return
+    text = read(pspec)
+    sec = section(text, "约束表", "项目约束表")
+    if sec is None:
+        return
+    tab = find_table(sec, ("ID", "指标", "上限"))
+    if tab is None:
+        f.warn("项目 spec 的「约束表」缺少 ID/指标/上限 列；跳过项目约束机器核对")
+        return
+    header, rows = tab
+    id_i = column(header, "ID")
+    metric_i = column(header, "指标")
+    limit_i = column(header, "上限")
+    unit_i = column(header, "单位")
+    cond_i = column(header, "条件")
+    constraints: dict[str, tuple[float, str, str]] = {}
+    for row in rows:
+        kid = cell(row, id_i)
+        if not kid:
+            continue
+        if not K_ID.match(kid):
+            f.error(f"项目约束 ID 非法：{kid!r}（应为 K1、K2...）")
+            continue
+        if kid in constraints:
+            f.error(f"项目约束 ID 重复：{kid}")
+        metric = cell(row, metric_i)
+        raw_limit = cell(row, limit_i)
+        if not metric:
+            f.error(f"项目约束 {kid} 缺指标")
+        try:
+            limit = float(raw_limit.replace(",", ""))
+        except ValueError:
+            f.error(f"项目约束 {kid} 的上限不是数值：{raw_limit!r}")
+            continue
+        unit = cell(row, unit_i) if unit_i is not None else ""
+        condition = cell(row, cond_i) if cond_i is not None else ""
+        if any(tok in metric for tok in ("次", "轮")):
+            if not condition:
+                f.error(f"项目约束 {kid} 是次数类指标（{metric}），「条件」必须写计数基准与范围（每测量段/整个 change/总次数）")
+            elif not COUNT_BASIS.search(condition):
+                f.error(f"项目约束 {kid} 的「条件」未写计数基准（{condition!r}）；请补「每测量段/每段/整个 change/总次数」等范围词")
+        constraints[kid] = (limit, unit, metric)
+    if not constraints:
+        f.warn("项目 spec 的「约束表」没有有效数据行；跳过项目约束机器核对")
+        return
+
+    ctext = read(change / "spec.md") if (change / "spec.md").is_file() else ""
+    csec = section(ctext, "项目约束核对", "约束核对")
+    if csec is None:
+        msg = "项目 spec 有「约束表」，change spec 必须加「项目约束核对」段并逐条核对"
+        if legacy:
+            f.warn("legacy（retroactive）：" + msg)
+        else:
+            f.error(msg)
+        return
+    ctab = find_table(csec, ("约束ID", "结论"))
+    if ctab is None:
+        msg = "「项目约束核对」缺少 约束ID/结论 表"
+        if legacy:
+            f.warn("legacy（retroactive）：" + msg)
+        else:
+            f.error(msg)
+        return
+    cheader, crows = ctab
+    kid_i = column(cheader, "约束ID")
+    s_i = column(cheader, "适用 S", "适用S", "S", "spec")
+    verdict_i = column(cheader, "结论")
+    note_i = column(cheader, "说明")
+    seen: set[str] = set()
+    for row in crows:
+        kid = cell(row, kid_i)
+        if not kid and not any(c for c in row):
+            continue
+        if kid not in constraints:
+            f.error(f"「项目约束核对」引用了不存在的项目约束：{kid!r}")
+            continue
+        if kid in seen:
+            f.error(f"「项目约束核对」重复核对约束：{kid}")
+        seen.add(kid)
+        verdict = cell(row, verdict_i)
+        if verdict not in ("满足", "不适用", "需变更"):
+            f.error(f"约束 {kid} 的结论必须是「满足/不适用/需变更」（当前 {verdict!r}）")
+            continue
+        note = cell(row, note_i) if note_i is not None else ""
+        if not note or PLACEHOLDER.search(note):
+            f.error(f"约束 {kid} 的核对说明为空或仍是占位符")
+            continue
+        measure = measurement_text(ctext)
+        count_nums = [float(n) for n in re.findall(r"(\d+(?:\.\d+)?)\s*次", measure or "")]
+        is_count = any(tok in metric for tok in ("次", "轮"))
+        if is_count and count_nums and verdict == "满足":
+            limit, unit, metric = constraints[kid]
+            worst = max(count_nums)
+            if worst > limit:
+                f.error(f"约束 {kid} 冲突：测量口径写 {worst:g} 次，超项目上限 {limit:g} 次；先裁决（改约束或走一次性例外）")
+                continue
+        if is_count and count_nums and verdict == "不适用":
+            f.error(f"约束 {kid} 标「不适用」，但测量口径含 {max(count_nums):g} 次；请说明为何不涉及或改「满足/需变更」")
+            continue
+        if verdict == "满足":
+            sref = cell(row, s_i) if s_i is not None else ""
+            if spec_ids is None:
+                continue
+            if sref not in spec_ids:
+                f.error(f"约束 {kid} 标「满足」，但适用 S 不存在：{sref!r}")
+                continue
+            target = spec_ids[sref]
+            if "基线" in target or "×" in target or re.search(r"[xX]", target):
+                f.info(f"约束 {kid} 的 {sref} 目标是相对式/倍数（{target}），无法机器比较；请人工确认")
+                continue
+            m = NUMERIC.search(target)
+            if not m:
+                f.info(f"约束 {kid} 的 {sref} 目标无数字（{target}），无法机器比较；请人工确认")
+                continue
+            limit, unit, metric = constraints[kid]
+            if not unit:
+                f.info(f"约束 {kid} 缺单位，无法确认 {sref} 目标「{target}」与上限同量纲；请人工确认")
+                continue
+            if unit.casefold() not in target.casefold():
+                f.info(f"约束 {kid} 单位「{unit}」未出现在 {sref} 目标「{target}」中，无法确认同量纲；请人工确认")
+                continue
+            value = float(m.group(1))
+            if value > limit:
+                f.error(f"约束 {kid} 冲突：{sref} 目标 {value:g}{unit} 超项目上限 {limit:g}{unit}")
+        elif verdict == "需变更":
+            if not USER_CONFIRM.search(" ".join(row)):
+                f.error(f"约束 {kid} 标「需变更」，但核对行没有「用户确认: [用户] YYYY-MM-DD」；未拍板不得收口")
+    for kid in constraints:
+        if kid not in seen:
+            f.error(f"项目约束 {kid} 未在 change spec「项目约束核对」中出现")
+
+
 def check_project_spec(change: Path, mode: str, f: Findings, legacy: bool) -> None:
     if mode != "close":
         return
@@ -580,10 +767,11 @@ def main() -> int:
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--dispatch", action="store_true", help="派发前检查（默认）")
     mode.add_argument("--close", action="store_true", help="收口前检查")
-    ap.add_argument("--strict", action="store_true", help="warning 也算失败")
+    ap.add_argument("--strict", action="store_true",
+                    help="warning 也算失败；close 时并强制要求自动项日志")
     ap.add_argument("--json", action="store_true", help="JSON 输出")
     ap.add_argument("--require-logs", action="store_true",
-                    help="close 时要求每个自动项有 data/check-<C>.log 且 exit=0")
+                    help="close 时要求每个自动项有 data/check-<C>.log 且 exit=0（默认由 --strict 隐含）")
     args = ap.parse_args()
 
     change = Path(args.change).resolve()
@@ -604,8 +792,10 @@ def main() -> int:
     spec_ids = check_spec(change, f, legacy)
     check_ids = check_check(change, spec_ids, f, legacy)
     check_tasks(change, mode_name, spec_text, check_ids, spec_ids, f, legacy)
+    check_project_skeleton(change, mode_name, f)
+    check_project_constraints(change, spec_ids, f, legacy)
     check_project_spec(change, mode_name, f, legacy)
-    if args.require_logs and mode_name == "close":
+    if (args.require_logs or args.strict) and mode_name == "close":
         for cid in sorted(f.auto_ids, key=lambda x: int(x[1:])):
             log = change / "data" / f"check-{cid}.log"
             if not log.is_file():
@@ -624,19 +814,22 @@ def emit(f: Findings, mode: str, args: argparse.Namespace) -> int:
             "strict": args.strict,
             "errors": f.errors,
             "warnings": f.warnings,
+            "infos": f.infos,
             "verdicts": f.verdicts,
             "rejected": f.rejected,
-            "summary": {"errors": len(f.errors), "warnings": len(f.warnings)},
+            "summary": {"errors": len(f.errors), "warnings": len(f.warnings), "infos": len(f.infos)},
         }, ensure_ascii=False, indent=2))
     else:
         for msg in f.errors:
             print(f"ERROR   {msg}")
         for msg in f.warnings:
             print(f"WARNING {msg}")
+        for msg in f.infos:
+            print(f"INFO    {msg}")
         if any(f.verdicts.values()):
             extra = "（证伪留档）" if f.rejected else ""
             print(f"判定: {f.verdicts['pass']} ✅ / {f.verdicts['fail']} ❌ / {f.verdicts['blocked']} ⚠️{extra}")
-        print(f"{mode}: {len(f.errors)} error(s), {len(f.warnings)} warning(s) -> {'PASS' if ok else 'FAIL'}")
+        print(f"{mode}: {len(f.errors)} error(s), {len(f.warnings)} warning(s), {len(f.infos)} info(s) -> {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 
 

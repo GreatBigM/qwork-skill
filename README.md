@@ -8,7 +8,7 @@ workbench 让嵌入式/软件开发团队的项目任务管理跟代码走：每
 
 本 skill 支持多 agent 目标：Hermes / Claude Code / Codex / ZCode / DeepSeek Harness(dsh)。安装脚本自动探测本机已安装的 agent，让用户选择安装目标。
 
-> **本机状态（2026-11-14）**：本地源码与安装已是 **v4.8.3**。安装/升级用 `bash install.sh --local --target dsh`（用当前 checkout，不克隆远端），并以 `bash install.sh --check` 校验一致；远端安装命令仅在已推送后使用。
+> **本机状态（2026-11-14）**：本地源码与安装已是 **v4.9.0**。安装/升级用 `bash install.sh --local --target dsh`（用当前 checkout，不克隆远端），并以 `bash install.sh --check` 校验一致；远端安装命令仅在已推送后使用。
 
 
 ```bash
@@ -120,16 +120,19 @@ python3 tools/qwork-archive.py 0_workbench/change/<name> --commit
 # 全项目进度（change/ + archive/）
 python3 tools/qwork-status.py .            # 或任意子目录；--json；--strict 检查 WIP 超限
 python3 tools/qwork-run.py 0_workbench/change/<name> --dry-run   # 可选：执行自动项并落 data/check-C*.log
-python3 tools/qwork-check.py 0_workbench/change/<name> --close --require-logs   # 可选：强制自动项日志
+python3 tools/qwork-check.py 0_workbench/change/<name> --close --strict   # 严格收口：warning 失败 + 强制自动项日志
+python3 tools/qwork-check.py 0_workbench/change/<name> --close --require-logs   # 仅强制日志（--strict 已隐含）
 ```
 
 > `tools/` 在仓库根或安装后的 skill 目录（如 `~/.dsh/skills/qwork/tools/`），不是用户项目根；装好后把命令里的 `tools/` 换成 `<skill-dir>/tools/`。
 >
 > WIP 上限可选：在 `0_workbench/qwork.conf` 写 `wip_limit=3`，或设 `QWORK_WIP_LIMIT=3`；`qwork-status` 显示 `WIP：N/3`，超限时 `--strict` 退出 1。
 >
-> `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。`qwork-status` 还会把 `[ ]` 同行带 `BLOCKED_*` / `阻塞原因：` / `等待外部` 的任务标成「阻塞（待确认）」，提醒改 `[!]`。
+> `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`--close --strict` 还要求每个「自动」C 有 `data/check-<C>.log` 且含 `exit=0`。项目级 spec 写了「约束表」时，change spec 必须有「项目约束核对」，逐条核对 K；满足项仅在单位一致时按 S 目标数值与上限比较，单位不一致/次数类只发 INFO；需变更项必须带用户确认（一次性例外）或改项目级约束后写满足。`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。`qwork-status` 还会把 `[ ]` 同行带 `BLOCKED_*` / `阻塞原因：` / `等待外部` 的任务标成「阻塞（待确认）」，提醒改 `[!]`。
 >
 > 旧格式：spec 顶部标 `> retroactive` 的存量按 WARNING 降级；未标的按新格式报错（先标标记再补结构，不靠删表头绕过）。
+>
+> CI：`.github/workflows/ci.yml` 在 push/PR 跑 pytest、两份黄金样例 `--close`、`publish-check.py` 与 `git diff --check`。
 >
 > `qwork-archive --commit` 只提交 `archive/<name>` + 变更过的 `.gitignore`；项目级 spec/design 的收口改动先单独提交。commit 失败会回滚移动与 `.gitignore`，不留半归档状态。
 
