@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：新建/修改/接手 change，四要素（spec/design/tasks/check）落地，验收→吸收 design→更新项目级 spec→归档闭环，维护 0_workbench 结构与进度；也用于查任务进度、初始化 workbench、把产出沉淀到知识库。
-version: 4.3.0
+version: 4.4.0
 category: knowledge
 metadata:
   agent:
@@ -56,7 +56,7 @@ metadata:
 
 1. **命名**：kebab-case（小写+连字符，2–4 段），建议 `<主题>-<类型>`（如 `rx-prealloc-ab`、`partition-fix`）；不强制动词开头、不带日期；先查 `change/`、`archive/` 同主题（§0.4）。用户未给名 → 拟 2–3 个候选让用户选，不自定后不回显。
 2. 建 `0_workbench/change/<name>/`。
-3. **顺序 spec → check → design → tasks**（验收驱动：先定标准，再定怎么验、怎么改；tasks 边做边填）。
+3. **顺序 spec → check → design → tasks**（验收驱动：先定标准，再定怎么验、怎么改；tasks 边做边填）。成功标准表用 `S1、S2…` 编号，check 的 `C` 项挂到 `S` 上。
 4. **数据落 `change/<name>/data/`**：原始日志、脚本输出、实验矩阵（不进四要素、默认不入库）；数字结论回填 tasks。
 5. 分析报告落知识库产出区，不塞 change 目录。
 6. **基线未测时**：性能/实验型先立 P0 基线任务；spec 基线列写 `待测（tasks P0）`，目标写相对式（如 `≥ 基线 ×1.10`），底线可留空（`—`/`待定（P0 后回填）`），不得凭空写数。P0 测完把绝对值回填 tasks，spec 基线列改 `见 tasks P0` 并记一条变更说明——**目标与判定规则必须开工前定死，基线数值允许 P0 后回填**。
@@ -73,18 +73,14 @@ metadata:
 
 ### check.md 怎么写
 
-可测试、可执行、定量；**阈值只引 spec，不另立门槛**（spec ≥94 就不能在 check 写 ≥90）：
+每个检查项一个 ID（`C1、C2…`），挂到 spec 的某个 `S` 维度上；阈值只引 spec，不另立门槛（spec ≥94 就不能在 check 写 ≥90）：
 
-```bash
-# 功能
-bash scripts/report.sh          # 判定：stdout 恰为 pilot-ok\n，退出码 0
-# 性能
-iperf3 -c <host> -t 30 -P 5     # 判定：TCP RX ≥ spec「吞吐/目标」
-# 稳定性
-for i in $(seq 5); do reboot; done   # 判定：5 次重启 0 crash
-```
+| ID | spec | 检查方法（命令/步骤） | 判定口径 | 类型 |
+|----|------|----------------------|----------|------|
+| C1 | S1 | `bash scripts/report.sh` | stdout 恰为 `pilot-ok`，exit 0 | 自动 |
+| C2 | S2 | 5 次重启循环 | 0 crash | 自动 |
 
-写法：命令 + 判定口径；阈值标注取自 spec 哪个维度；**结论留空**（结论落 tasks）。拒绝「功能正常」。
+规则：每个 `S` 至少一个 `C`；每个 `C` 必须在 tasks「验收结果」里有同名行；**结论留空**（结论落 tasks）；拒绝「功能正常」。
 
 ## §3 施工
 
@@ -108,7 +104,7 @@ for i in $(seq 5); do reboot; done   # 判定：5 次重启 0 crash
    - 未跟踪：普通 `mv` 即可。
 6. **commit**：代码改动与 workbench 文档改动（若被跟踪，含归档移动与 .gitignore）一并提交，不 push；提交信息建议 `<change>: 归档收口`。纯文档 change 把证据链写进 tasks 结尾：文件清单 + `git diff --stat <范围>` + 核验输出摘要（如 `report.sh → pilot-ok，9B`）。
 
-**收口三件套（最常漏，完整清单见 SCHEMA §三）**：① tasks 收口：全部 `[x]` 且有证据（含 P2/产出段），阻塞项经用户确认的 `[!]` 视同收口；无其他未解除 `[!]`；check 各条已跑过（结论落 tasks）② tasks 数据表已回填 ③ 项目级 spec 变更记录有该 change 行——任一缺失都说明还没真收口。经验：tasks 全 ✅ + 目录已进 archive/，仍可能三件都缺（optimized-vs-competitor 实例）——查「是否真收口」先跑审计再答。
+**收口三件套（最常漏，完整清单见 SCHEMA §三）**：① tasks 收口：全部 `[x]` 且有证据（含 P2/产出段），阻塞项经用户确认的 `[!]` 视同收口；无其他未解除 `[!]`；check 各条已跑过、每个 `C` 在验收结果里都有行（结论落 tasks）② tasks 数据表已回填 ③ 项目级 spec 变更记录有该 change 行——任一缺失都说明还没真收口。经验：tasks 全 ✅ + 目录已进 archive/，仍可能三件都缺（optimized-vs-competitor 实例）——查「是否真收口」先跑审计再答。
 
 > 执行会话/子代理回报闭环时，`[x]` 是自报不是证据——先跑**核验三查**（源码 commit / 知识库沉淀 / 归档），三查不过不算闭环；命令见 `references/execution-handoff.md` §五。
 
@@ -126,7 +122,7 @@ for i in $(seq 5); do reboot; done   # 判定：5 次重启 0 crash
 ## §6 执行载体与交接
 
 - **对话分离**：规划会话产出四要素；执行会话**只读四要素 + `data/`**（spec/design/tasks/check 全读、只读），**只写 `tasks.md` 与 `data/`**；不得改 spec/design/check，遇阻塞即退出。两对话只传工件（文件），不传聊天历史。
-- **派发就绪自检（派单前必过）**：① 执行者要读哪些文件、各自是否自足？② 第一条任务、第一条命令是什么？③ 每个任务的完成判据是否可观察？④ 每个指标的基线/目标/测量口径在哪？⑤ 环境/设备/权限从哪来？⑥ 什么绝对不能改、卡住时谁拍板（决策权）？⑦ 什么条件启动、什么条件停止/退回规划？⑧ 做完交什么、按什么格式回报？——任一答成「在之前的对话里」或「执行者自己判断」，就是没冻结，先补再派。
+- **派发就绪自检（派单前必过）**：先跑 `python3 tools/qwork-check.py <change> --dispatch`（机器查 ID/覆盖/接手须知），再人工过八问：① 执行者要读哪些文件、各自是否自足？② 第一条任务、第一条命令是什么？③ 每个任务的完成判据是否可观察？④ 每个指标的基线/目标/测量口径在哪？⑤ 环境/设备/权限从哪来？⑥ 什么绝对不能改、卡住时谁拍板（决策权）？⑦ 什么条件启动、什么条件停止/退回规划？⑧ 做完交什么、按什么格式回报？——任一答成「在之前的对话里」或「执行者自己判断」，就是没冻结，先补再派。
 - **载体二选一**：新窗口执行会话，或子代理（主对话决策，子代理实测）。子代理按回执格式带回数据与建议（证据给路径/关键读数），**不 commit、不归档、不写知识库**——提交由主对话核验后完成并回填 hash；独立执行会话可按 §3 每阶段自行 commit。方向性决策留主对话。
 - **一代理一里程碑**：编译+烧录+长稳整包必超时；按「烧 B + 短矩阵」「B 长稳」「烧 A + 复测」拆，靠落盘 `change/data/` 接力；给现成 IP/通道，禁止探索。
 - **并发双写**：写前看目标目录 `ls -lat` 是否秒级新鲜、工具是否报 sibling 修改；撞警示即停，请用户裁定所有权；归档前复核目录归属。DSH 多会话同进程，别用 `ps | grep hermes` 判并发。
@@ -141,8 +137,9 @@ for i in $(seq 5); do reboot; done   # 判定：5 次重启 0 crash
 - `references/execution-handoff.md` — 派子代理 / 长任务 / 核验 / 并发的完整做法
 - `references/troubleshooting.md` — 反模式速查
 - `references/local/*.md` — 本机实践扩展（不随上游更新覆盖）
+- `tools/qwork-check.py` — 派发/收口门：`--dispatch` / `--close` / `--strict` / `--json`
 - `examples/` — 两份填满的黄金样例（`doc-change` 文档类、`experiment-change` 实验类），照抄结构而不是照抄数字
 
 ## 支持文件清单
 
-`SKILL.md`、`SCHEMA.md`、`CHANGELOG.md`、`templates/`、`references/`、`examples/`；安装面以 `install.sh` 的 `INSTALL_FILES`/`INSTALL_DIRS` 为单一清单。
+`SKILL.md`、`SCHEMA.md`、`CHANGELOG.md`、`templates/`、`references/`、`examples/`、`tools/`；安装面以 `install.sh` 的 `INSTALL_FILES`/`INSTALL_DIRS` 为单一清单。

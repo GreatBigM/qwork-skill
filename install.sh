@@ -15,7 +15,7 @@ SKILL_NAME="qwork"
 
 # ── 安装面单一清单（拷贝与 --check 共用；README / SKILL 的清单以此为准）──
 INSTALL_FILES=(SKILL.md SCHEMA.md CHANGELOG.md)
-INSTALL_DIRS=(templates references examples)
+INSTALL_DIRS=(templates references examples tools)
 LOCAL_OVERLAY="references/local"   # 本机扩展：升级时保留，不随上游覆盖
 
 usage() {

@@ -2,6 +2,17 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 4.4.0 (2026-11-14)
+
+### Added（追踪与门禁）
+
+- **检查项稳定 ID**：spec 成功标准表加 `ID（S1…）`；check 改为 `C1…` 表（ID / spec / 检查方法 / 判定口径 / 类型）；tasks「验收结果」按 C 行。规则：每个 S 至少一个 C，每个 C 必须有结果行。
+- **`tools/qwork-check.py`**：`--dispatch` / `--close` / `--strict` / `--json`。机器检查四文件、ID 唯一性、S/C 覆盖、接手须知八字段、未完成任务、阻塞收口、C 结果行、项目级 spec changelog；旧格式只报 WARNING。
+- **安装面**：`tools/` 随技能下发，`install.sh` 清单与 `--check` 同步。
+- 模板与两份黄金样例改为 ID 格式；README 增加「校验门」用法。
+
+- 版本 4.3.0 → 4.4.0
+
 ## 4.3.0 (2026-11-14)
 
 ### Added（方法论闭环 + 黄金样例 + 回归清单）

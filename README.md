@@ -69,7 +69,7 @@ mkdir -p 0_workbench/change/<change_name>/data
 #   spec.md   ← 做成什么样（成功标准量化表：维度/基线/目标 + 约束）
 #   design.md ← 怎么做（事实约束 → 现状/目标路径 → 决策 → 观测点）
 #   tasks.md  ← 怎么组织（阶段/顺序/判据，记 commit hash + 测试数据/验收结果）
-#   check.md  ← 怎么验收（可执行命令 + 判定口径，阈值引 spec）
+#   check.md  ← 怎么验收（C 项表：ID/spec/方法/判定；阈值引 spec）
 # 原始日志放 change/<name>/data/，数字结论回填 tasks
 # 闭环：验收 → design 合并进 design/ → 项目级 spec.md 复审 → 产出落知识库 → 移 archive/
 ```
@@ -97,6 +97,20 @@ mkdir -p 0_workbench/change/<change_name>/data
 - 归档必检：按 SCHEMA §三 六项清单（tasks 勾选且无未解除 `[!]` / 数据回填 / design 吸收 / spec 复审 / 产出落库 / 迁 archive），缺一不算完
 - 派发必检：按 SKILL §6「派发就绪八问」逐条有答案；任一答成「在之前的对话里」就不许派
 
+## 校验门（机器检查）
+
+```bash
+# 派发前：四文件、S/C 覆盖、接手须知八字段
+python3 tools/qwork-check.py 0_workbench/change/<name> --dispatch
+
+# 收口前：任务清零、C 结果行、阻塞收口、项目 spec changelog
+python3 tools/qwork-check.py 0_workbench/change/<name> --close
+
+# --strict：warning 也算失败；--json：给 agent 读
+```
+
+> 旧格式 change 只报 WARNING（`--strict` 才失败），不强制存量回填。
+
 ## 仓库结构
 
 ```
@@ -109,6 +123,7 @@ qwork-skill/
 ├── scripts/                         ← 发布闸门（脱敏 + CHANGELOG 同步，**不随安装下发**）
 ├── examples/                        ← 填满的黄金样例（doc-change / experiment-change）
 ├── tests/                           ← 探针回归清单（改版后手跑）
+├── tools/qwork-check.py             ← 派发/收口门（随安装下发）
 ├── templates/                       ← change 四要素四模板（spec / design / tasks / check）
 └── references/
     ├── experiment-playbook.md       ← 实验型 change：驱动 A/B、固件换版、长测（按需加载）
