@@ -8,6 +8,9 @@ workbench 让嵌入式/软件开发团队的项目任务管理跟代码走：每
 
 本 skill 支持多 agent 目标：Hermes / Claude Code / Codex / ZCode / DeepSeek Harness(dsh)。安装脚本自动探测本机已安装的 agent，让用户选择安装目标。
 
+> **本机状态（2026-11-14）**：本地源码与 DSH 安装已是 **v4.8.2**；远端 `origin` / gitee `main` 仍停在 **3.4.4**（25+ 提交未推送）。按下面 curl 命令安装会拿到旧版；本机/内网请用 `bash install.sh --local --target dsh`，并以 `bash install.sh --check` 为准。
+
+
 ```bash
 # 方式 1：交互选择安装目标（推荐，先下载再执行以保留交互）
 curl -fsSL https://gitee.com/GreatBigM/qwork-skill/raw/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh

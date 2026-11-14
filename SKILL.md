@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.8.1
+version: 4.8.2
 category: knowledge
 metadata:
   agent:
@@ -65,6 +65,10 @@ metadata:
 8. **开单即提交**：四要素骨架写好后先 commit（`<change>: 开单`），再开工；后续每阶段提交（§3）。提交只 add 本 change 与本次改动文件，**禁止 `git add -A`**；他人在场的 dirty 先问归属，`data/` 默认 ignore。
 
 四要素缺一不可；**目标与判定规则必须在开工前写好**（基线回填规则见第 6 条）。边界：标准由 spec 定，方法由 check 给，结果落 tasks（SCHEMA §二）。
+
+9. **小任务（同构轻量，不另立通道）**：仅当同时满足 ① 单 S、单 C ② 改动 ≤2 个非 workbench 文件 ③ 预计 ≤0.5 人日 ④ 不改 spec 阈值/测量口径 ⑤ 不跨 change 依赖，才可把四要素压到 1 个 S、1 个 C、1 段 design、3 个 tasks。仍用同一目录、同一模板、同一 close/archive/证据门；压缩的是条目数，不是门禁。任一超限（出现第 2 个 S、第 3 个非 workbench 文件、需改阈值、需拆阶段/跨 change）→ 收口前补成完整四要素，不得归档后补。不提供 `--lite` 参数、lite 目录或第二套门禁。
+
+
 
 **改需求**：改 spec 后必须同步 check（判定口径）、tasks（未完成项/验收表/变更记录）、design（方案）——只改一处视为变更未完成。规则：
 - tasks 加一行变更记录：`YYYY-MM-DD | 改了什么 | 原因 | 影响面`。
