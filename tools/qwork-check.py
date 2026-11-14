@@ -197,6 +197,30 @@ def check_handoff(tasks: str, f: Findings) -> None:
             f.error(f"接手须知缺少「{kw}」")
 
 
+def check_closure(tasks: str, mode: str, legacy: bool, f: Findings) -> None:
+    """tasks 是执行唯一台账：收口段（design 吸收 / 项目 spec / 产出沉淀）全勾才算完结。"""
+    sec = section(tasks, "收口")
+    if sec is None:
+        msg = "tasks 缺少「收口」段（design 吸收 / 项目 spec 复审 / 产出沉淀；全勾才算完结）"
+        if not legacy:
+            f.error(msg)
+        else:
+            f.warn(msg)
+        return
+    states = task_states(sec)
+    if not states:
+        msg = "tasks「收口」段没有任务复选框"
+        if not legacy:
+            f.error(msg)
+        else:
+            f.warn(msg)
+        return
+    if mode == "close":
+        unchecked = [d for s, d in states if s == " "]
+        if unchecked:
+            f.error(f"tasks 收口段仍有 {len(unchecked)} 项未完成（[ ]）")
+
+
 def task_states(tasks: str) -> list[tuple[str, str]]:
     states: list[tuple[str, str]] = []
     in_fence = False
@@ -219,6 +243,7 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
         return
     tasks = read(path)
     check_handoff(tasks, f)
+    check_closure(tasks, mode, check_ids is None, f)
     states = task_states(tasks)
     if not states:
         f.error("tasks.md 没有任务复选框")

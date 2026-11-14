@@ -68,10 +68,10 @@ mkdir -p 0_workbench/change/<change_name>/data
 # 依次写四要素（确认顺序：spec → check → design → tasks）：
 #   spec.md   ← 做成什么样（成功标准量化表：维度/基线/目标 + 约束）
 #   design.md ← 怎么做（事实约束 → 现状/目标路径 → 决策 → 观测点）
-#   tasks.md  ← 怎么组织（阶段/顺序/判据，记 commit hash + 测试数据/验收结果）
+#   tasks.md  ← 执行唯一台账（阶段/顺序/判据 + commit、阶段结论、测试数据、验收结果、收口段）
 #   check.md  ← 怎么验收（C 项表：ID/spec/方法/判定；阈值引 spec）
 # 原始日志放 change/<name>/data/，数字结论回填 tasks
-# 闭环：验收 → design 合并进 design/ → 项目级 spec.md 复审 → 产出落知识库 → 移 archive/
+# 闭环：验收 → tasks 收口段三项（design 吸收 / 项目 spec 复审 / 产出沉淀）→ 移 archive/
 ```
 
 ## 核心概念
@@ -82,19 +82,21 @@ mkdir -p 0_workbench/change/<change_name>/data
 |------|------|--------|
 | spec.md | 规格 | 做成什么样（成功标准量化表 + 约束） |
 | design.md | 设计 | 怎么做（技术路径 + 决策依据） |
-| tasks.md | 任务 | 怎么组织（阶段/顺序/判据，记 commit/测试数据/验收结果） |
+| tasks.md | 执行台账 | 怎么组织（阶段/顺序/判据）+ 阶段结论、commit、测试数据、验收结果、收口段 |
 | check.md | 验收 | 怎么验收（命令 + 判定口径，阈值引 spec） |
 
 > 原始产物（日志/脚本输出/实验矩阵）放同目录 `data/`；数字结论回填 tasks，不另立第二份口径。
 
 > 四要素的闭环：**spec = 做成什么样；design = 怎么做；tasks = 怎么组织；check = 怎么验收**。缺一个，执行者就得回问。
+>
+> **tasks 是执行唯一台账**：进度、阶段结论、commit、实测、验收结果、收口动作都在这里；tasks 全勾（含收口段）= change 完结，归档只是移动。
 
 **铁律**：
 - 标准由 spec 定，方法由 check 给，结果落 tasks——同一信息不两处复述
 - check 必须可测试、定量（反例「功能正常」；正例「iperf3 TCP RX ≥ <spec 标准值>」）——阈值一律引自 spec 成功标准表，check 只给方法，不另立标准
 - spec.md 永远是单文件 + 自带 changelog，不依赖 git log
 - design 吸收 = 合并进现有文档，不堆叠文件
-- 归档必检：按 SCHEMA §三 六项清单（tasks 勾选且无未解除 `[!]` / 数据回填 / design 吸收 / spec 复审 / 产出落库 / 迁 archive），缺一不算完
+- 归档必检：tasks 全勾（含收口段三项）且无未解除 `[!]`、每个 C 有结果行、数据回填；tasks 全勾即完结，之后才迁 archive
 - 派发必检：按 SKILL §6「派发就绪八问」逐条有答案；任一答成「在之前的对话里」就不许派
 
 ## 工具（随安装下发）

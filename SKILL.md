@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：新建/修改/接手 change，四要素（spec/design/tasks/check）落地，验收→吸收 design→更新项目级 spec→归档闭环，维护 0_workbench 结构与进度；也用于查任务进度、初始化 workbench、把产出沉淀到知识库。
-version: 4.5.0
+version: 4.6.0
 category: knowledge
 metadata:
   agent:
@@ -37,7 +37,7 @@ metadata:
 | 改需求 / 改方案 | 更新四要素，变更记 tasks | SCHEMA §二 |
 | 接手 / 继续昨天的 change | §5 | — |
 | 验收 / 闭环 / 归档 | §4 | SCHEMA §三 |
-| 现在什么进度 / 还剩什么 | `change/*/tasks.md` 未勾项 + `archive/` 最近 + 项目级 spec 变更记录 | §4 收口三件套 |
+| 现在什么进度 / 还剩什么 | `change/*/tasks.md` 未勾项（含收口段）+ `archive/` 最近 + 项目级 spec 变更记录 | §4 tasks 收口段 |
 | 沉淀到知识库 | 产出物落知识库产出区，登记按知识库侧规则 | SCHEMA §四 |
 | 初始化 workbench | §0 | SCHEMA §一/§七 |
 
@@ -95,14 +95,14 @@ metadata:
 
 ## §4 闭环
 
-1. **先自查 tasks 实际状态**（不采信「都打勾了」）：`[ ]` 但同行有阻塞说明 → 转 `[!]` 并补解除条件；`[x]` 无证据也算未完成。再对照 check **逐条跑**（每条须是可执行命令 + 期望结果，或明确标注人工判定；散文条目先补）；实测数字回填 tasks「验收结果」，❌ 照实写（不许只在 check 里写结论）。
-2. design 要点**合并**进 `0_workbench/design/` 现有章节（末尾标 `> 来源: <change>`），不堆文件。
-3. **强制**复审项目级 `spec.md` 全文：新增约束/天花板/配置 → 更新并在「变更记录」记一行（不是「按需」）。
-4. 产出物落知识库产出区；路径、命名与登记按知识库侧规则（本 skill 不定义）。**本机无知识库约定时先问用户产出放哪（或确认无需沉淀），不自创目录**（「无约定」= 本机没有可发现的知识库管理技能或目录规则；有则按其规则执行）。
-5. **归档**：`python3 <skill-dir>/tools/qwork-archive.py <change>`（默认先过 close 门；被跟踪走 `git mv`，并自动把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，复核无 untracked；`--dry-run` 预演，`--commit` 提交）。手工等价：`mkdir -p archive` → `git ls-files` 判断跟踪 → `git mv` → `git status` 复核 `data/**` 是否因路径变化变 untracked 并同步 ignore。
+1. **先自查 tasks 实际状态**（不采信「都打勾了」）：确认有「收口」段且三项都在；`[ ]` 但同行有阻塞说明 → 转 `[!]` 并补解除条件；`[x]` 无证据也算未完成；收口段未勾 = tasks 未完。再对照 check **逐条跑**（每条须是可执行命令 + 期望结果，或明确标注人工判定；散文条目先补）；实测数字回填 tasks「验收结果」，❌ 照实写（不许只在 check 里写结论）。
+2. design 要点**合并**进 `0_workbench/design/` 现有章节（末尾标 `> 来源: <change>`），不堆文件（对应 tasks 收口段第 1 项）。
+3. **强制**复审项目级 `spec.md` 全文：新增约束/天花板/配置 → 更新并在「变更记录」记一行（不是「按需」；对应收口段第 2 项）。
+4. 产出物落知识库产出区；路径、命名与登记按知识库侧规则（本 skill 不定义）。**本机无知识库约定时先问用户产出放哪（或确认无需沉淀），不自创目录**（「无约定」= 本机没有可发现的知识库管理技能或目录规则；有则按其规则执行；对应收口段第 3 项）。
+5. **归档**（tasks 全勾含收口段之后）：`python3 <skill-dir>/tools/qwork-archive.py <change>`（默认先过 close 门；被跟踪走 `git mv`，并自动把 `.gitignore` 的 `change/` 规则镜像到 `archive/`，复核无 untracked；`--dry-run` 预演，`--commit` 提交）。手工等价：`mkdir -p archive` → `git ls-files` 判断跟踪 → `git mv` → `git status` 复核 `data/**` 是否因路径变化变 untracked 并同步 ignore。
 6. **commit**：代码改动单独提交；workbench 文档（含归档移动与 `.gitignore`）用 `qwork-archive --commit` 提交，或与代码一并提交；不 push，提交信息建议 `<change>: 归档收口`。纯文档 change 把证据链写进 tasks 结尾：文件清单 + `git diff --stat <范围>` + 核验输出摘要（如 `report.sh → pilot-ok，9B`）。
 
-**收口三件套（最常漏，完整清单见 SCHEMA §三）**：① tasks 收口：全部 `[x]` 且有证据（含 P2/产出段），阻塞项经用户确认的 `[!]` 视同收口；无其他未解除 `[!]`；check 各条已跑过、每个 `C` 在验收结果里都有行（结论落 tasks）② tasks 数据表已回填 ③ 项目级 spec 变更记录有该 change 行——任一缺失都说明还没真收口。经验：tasks 全 ✅ + 目录已进 archive/，仍可能三件都缺（optimized-vs-competitor 实例）——查「是否真收口」先跑审计再答。
+**tasks 收口段（三项全勾才算完结）**：① design 要点吸收 ② 项目级 spec 复审 + changelog ③ 产出落库/确认无需；加上全部施工任务 `[x]` 且有证据、每个 `C` 在「验收结果」有行、数据回填，才算 tasks 全勾。`qwork-check --close` 会卡「收口段缺失/仍有 `[ ]`」；缺段或未勾不得归档。**tasks 全勾 = change 完结，归档只是移动，不另设进度表。**
 
 > 执行会话/子代理回报闭环时，`[x]` 是自报不是证据——先跑**核验三查**（源码 commit / 知识库沉淀 / 归档），三查不过不算闭环；命令见 `references/execution-handoff.md` §五。
 
@@ -114,7 +114,7 @@ metadata:
 
 1. **定位断点**：先 `python3 <skill-dir>/tools/qwork-status.py .` 看全项目进度，再 `git status --short` 看工作区有无未提交的施工残留；`ls -lat 0_workbench/change/<name>/` 与 `data/` 最近 mtime；知识库若为 git 仓再比最近提交；查是否还有后台进程在跑（烧录/测试跑到一半被切断是常态）。
 2. **核对记录值**：文档里的设备原值/基线可能与现场不符——**以现场读回和数据文件为准**，错记当场改，并在收口卡列「证伪/更正项」。
-3. **空着的验收表 = 未收口**：把实测数字回填进表（数字只躺在 `data/` 里没人看得到）。
+3. **空着的验收表或「收口」段 = 未收口**：把实测数字回填进表，把收口三项勾掉（数字只躺在 `data/` 里没人看得到）。
 4. **汇报三块**：结论（证据是哪条读数）/ 证伪与错记更正 / 未处理与决定不做的项。
 
 ## §6 执行载体与交接

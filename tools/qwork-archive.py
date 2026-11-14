@@ -185,9 +185,16 @@ def print_gate_failure(data: dict, raw_stdout: str) -> None:
 def commit(root: Path, change: Path, target: Path, name: str) -> str:
     rel_old = change.relative_to(root).as_posix()
     rel_new = target.relative_to(root).as_posix()
-    p = git(root, "add", "-A", "--", rel_old, rel_new, ".gitignore", check=False)
+    gi = root / ".gitignore"
+    paths = [rel_old, rel_new]
+    if gi.is_file():
+        paths.append(".gitignore")
+    p = git(root, "add", "-A", "--", *paths, check=False)
     if p.returncode != 0:
-        git(root, "add", "-A", "--", "0_workbench", ".gitignore")
+        fallback = ["0_workbench"]
+        if gi.is_file():
+            fallback.append(".gitignore")
+        git(root, "add", "-A", "--", *fallback)
     if git(root, "diff", "--cached", "--quiet", check=False).returncode == 0:
         return ""
     git(root, "commit", "-m", f"{name}: 归档收口")
@@ -272,7 +279,8 @@ def main() -> int:
             else:
                 print("ℹ️ 没有可提交的变更")
         else:
-            print("   下一步：git add -A 0_workbench .gitignore && git commit -m "
+            gi_hint = "0_workbench .gitignore" if (root / ".gitignore").is_file() else "0_workbench"
+            print(f"   下一步：git add -A {gi_hint} && git commit -m "
                   f"\"{name}: 归档收口\"")
             print("   （或加 --commit 让本工具提交）")
         return 0

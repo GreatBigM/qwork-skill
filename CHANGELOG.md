@@ -2,6 +2,20 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 4.6.0 (2026-11-14)
+
+### Changed（tasks 成为执行唯一台账）
+
+- **tasks = 执行唯一台账**：进度、阶段结论、commit、测试数据、验收结果、收口动作都记录在 tasks；**tasks 全勾（含收口段）= change 完结**，归档只是移动，不再把收口动作留在 tasks 之外。
+- **tasks 新增「收口」段**（模板/样例）：design 吸收、项目级 spec 复审+changelog、产出落库/确认无需三项；每项有判据与证据，全勾才算完结。
+- **每阶段加「阶段结论」**：阶段末记结果/偏差/决定，执行中的判断不丢。
+- `qwork-check.py --dispatch/--close`：新增收口段检查（新格式缺段或收口段有 `[ ]` 判 FAIL；`--dispatch` 也要求先规划收口段；legacy 只 WARNING）。
+- `qwork-status.py`：新增「收口」列与状态——缺收口段 / 收口剩 N 项；tasks 全勾但收口未完成不再显示「可归档」；可归档前还会核对项目级 `spec.md` 是否记了该 change（`project_spec_logged`）。
+- SKILL §4/§5、SCHEMA §一/§三、README、troubleshooting 同步；两份黄金样例补阶段结论与收口段。
+- **Fixed**：`qwork-archive --commit` 在项目没有 `.gitignore` 时不再因 `git add .gitignore` 失败；无镜像规则时下一步命令不再提示 `.gitignore`。
+
+- 版本 4.5.0 → 4.6.0
+
 ## 4.5.0 (2026-11-14)
 
 ### Added（归档与总览）

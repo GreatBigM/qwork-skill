@@ -20,6 +20,7 @@
 | 验收结论只写在 check.md | check 只放方法；实测与判定落 tasks |
 | 把 `<项目A>`/`<host>` 占位符当命令执行 | 先替换真实项目名/路径再跑 |
 | tasks 全勾但「测试数据」「验收结果」空着 | 数字回填表内，否则不算收口 |
+| tasks 全勾但无「收口」段 | 补 design 吸收 / 项目 spec 复审 / 产出沉淀三项；tasks 全勾含收口段才算完结 |
 | 用 `ps \| grep hermes` 判并发（DSH 下） | 看目录 mtime + 工具 sibling 警示 |
 | 基线没测就写死绝对目标 | spec 基线写 `待测（tasks P0）`、目标用相对式，P0 后回填 |
 | 把 check.md 当验收勾选表 | 勾选在 tasks；check 只放方法与判定 |
@@ -40,5 +41,5 @@
 - **归档漏项目级 spec 复审**：归档检查清单三项（design 合并 / 项目级 spec 复审更新 / 产出落知识库）全绿才算完成——漏 spec 复审即归档未完成。
 - **check 越界定标准**：标准由 spec 定、方法由 check 给、结果落 tasks——check 不得出现 spec 之外的门槛（如 spec ≥94 则 check 不得写 ≥90）。
 - **基线双头**：基线数字以 tasks「测试数据」为单一权威源，spec 标准表/check 验收的基线列引用此处。
-- **假收口**：tasks 标 ✅ + 目录已进 archive/ 仍可能缺 check 勾选、结果表回填、spec changelog 行——查「是否真收口」先跑收口三件套审计。
+- **假收口**：tasks 标 ✅ + 目录已进 archive/ 仍可能缺 check 结果行、数据回填、tasks 收口段——查「是否真收口」先跑 `qwork-check --close`，再核对收口段三项。
 - **边界混淆**：workbench 只负责产出物交接（写清来源 change/日期/结论），知识库的目录、命名、登记与组织模型不属本 skill——抄进来就会两套口径漂移。
