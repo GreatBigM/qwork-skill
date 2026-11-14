@@ -37,7 +37,7 @@ import os
 import re
 import sys
 
-SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
 SKIP_FILES = {"publish-check.py", "publish-deny.local"}  # 前者含规则字面量；后者是本机名单本身
 DENY_FILE = "scripts/publish-deny.local"   # 本机私用名单（gitignore），每行一个真名
 

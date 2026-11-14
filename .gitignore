@@ -2,6 +2,11 @@
 __pycache__/
 *.pyc
 
+# 测试/检查工具缓存（不参与发布扫描）
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
 # 编辑器 / 系统杂物
 .DS_Store
 *.swp

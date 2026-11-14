@@ -35,7 +35,7 @@ ring 512；只改一个常量，其余路径不变。
 
 ## 观测点
 
-- drop / 重传计数、RSSI、softirq CPU 占比。
+- drop / 重传计数、RSSI、softirq CPU 占比（仅用于定位，验收口径见 check）。
 
 ## 改动范围（文件级清单）
 

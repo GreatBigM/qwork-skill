@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.8.3 (2026-11-14)
+
+### Fixed
+
+- **测量口径唯一归属 spec**：SKILL §2.7、SCHEMA §四边界明确工具/参数/环境/采样/对照序列写进 spec「测量口径」，check 只写步骤/命令并引用 `spec Sx`；examples 去除重复的 A→B→A' 序列与 `check-links.sh` 命令。
+- **项目级 spec 升为上位约束**：change spec 不得静默突破项目级持久约束/已知天花板；确需变更须用户批准并更新项目 spec 变更记录，未裁决不得 close/archive。
+- **doc 样例 C4 可追溯**：新增 S4「重复执行稳定」，C4 改挂 S4；tasks 验收结果与测试数据同步，消除「C4 挂 S1 但 S1 无此维度」。
+- **design 观测点边界**：doc design 改为「无额外观测点」；experiment design 注明观测点仅用于定位，验收口径见 check。
+- **SCHEMA 表述**：design 吸收改为「评估是否需要新增/更新项目级 spec 约束」；小任务写清「3 个施工任务 + 收口段 3 项」。
+- `publish-check.py` 跳过 `.pytest_cache` / `.mypy_cache` / `.ruff_cache`；`.gitignore` 同步。
+- 版本 4.8.2 → 4.8.3
+
 ## 4.8.2 (2026-11-14)
 
 ### Changed
