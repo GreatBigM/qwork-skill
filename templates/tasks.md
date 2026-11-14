@@ -9,6 +9,9 @@
 - 必读：`spec.md` / `design.md` / `check.md`（本目录）+ 项目级 `0_workbench/spec.md`
 - 环境/前置：<设备、IP、工具、构建命令、数据目录>
 - 绝对禁止：<不改 spec/design/check；不 push；不碰 X>
+- 决策权：<谁批 spec 变更 / 谁批归档 / 谁裁决阻塞与 `[!]`>
+- 启动条件：<满足什么才开始；不满足找谁>
+- 停止/重规划条件：<什么情况下停、退回规划会话>
 - 完成判据：每条任务行末的「判据」；验收按 check 逐项
 - 卡住时：<停在哪一步、向谁、按什么格式回报>
 - 交付：tasks 勾选 + `data/` 证据 + 执行回执（见 `references/execution-handoff.md` §七）

@@ -107,6 +107,8 @@ qwork-skill/
 ├── SCHEMA.md                        ← 宪法（做成什么样：目录/四要素边界/拒绝态/流转/知识沉淀）
 ├── CHANGELOG.md                     ← 版本历史（版本号单一真相源在 SKILL.md frontmatter）
 ├── scripts/                         ← 发布闸门（脱敏 + CHANGELOG 同步，**不随安装下发**）
+├── examples/                        ← 填满的黄金样例（doc-change / experiment-change）
+├── tests/                           ← 探针回归清单（改版后手跑）
 ├── templates/                       ← change 四要素四模板（spec / design / tasks / check）
 └── references/
     ├── experiment-playbook.md       ← 实验型 change：驱动 A/B、固件换版、长测（按需加载）
