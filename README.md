@@ -104,7 +104,7 @@ mkdir -p 0_workbench/change/<change_name>/data
 ## 工具（随安装下发）
 
 ```bash
-# 派发前：四文件、S/C 覆盖、接手须知九字段
+# 派发前：四文件、S/C 覆盖、接手须知十字段（负责人可选建议填）
 python3 tools/qwork-check.py 0_workbench/change/<name> --dispatch
 
 # 收口前：任务清零、C 结果行、阻塞收口、项目 spec changelog

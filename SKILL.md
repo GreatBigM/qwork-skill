@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.7.1
+version: 4.7.2
 category: knowledge
 metadata:
   agent:

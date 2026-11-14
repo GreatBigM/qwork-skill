@@ -276,6 +276,17 @@ def test_close_compares_actual_against_spec_target(tmp_path: Path) -> None:
     assert "不满足 spec S3 目标" in p.stdout + p.stderr
 
 
+def test_status_reads_owner(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = change / "tasks.md"
+    text = tasks.read_text(encoding="utf-8").replace("负责人：lead", "负责人：alice", 1)
+    tasks.write_text(text, encoding="utf-8")
+    p = run(STATUS, str(root), "--json", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+    data = json.loads(p.stdout)
+    assert data["changes"][0]["owner"] == "alice"
+
+
 def test_status_flags_unchecked_blocked_hint(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     tasks = (change / "tasks.md").read_text(encoding="utf-8")

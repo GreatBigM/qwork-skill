@@ -28,7 +28,7 @@ HASH = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 NUMERIC = re.compile(r"([-+]?\d+(?:\.\d+)?)\s*([A-Za-z%℃]+)?")
 
-HANDOFF_FIELDS = ("必读", "环境", "禁止", "决策权", "启动条件", "停止", "判据", "回报", "交付")
+HANDOFF_FIELDS = ("负责人", "必读", "环境", "禁止", "决策权", "启动条件", "停止", "判据", "回报", "交付")
 VERDICTS = ("✅", "❌", "⚠️")
 
 
@@ -353,7 +353,10 @@ def check_handoff(tasks: str, f: Findings, legacy: bool) -> None:
         return
     for kw in HANDOFF_FIELDS:
         if kw not in sec:
-            f.error(f"接手须知缺少「{kw}」")
+            if kw == "负责人":
+                f.warn("接手须知建议补「负责人」（owner）；不阻塞开工")
+            else:
+                f.error(f"接手须知缺少「{kw}」")
 
 
 def check_closure(tasks: str, mode: str, legacy: bool, f: Findings) -> None:

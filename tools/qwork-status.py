@@ -99,6 +99,8 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
     spec = (change / "spec.md").read_text(encoding="utf-8") if files["spec.md"] else ""
     tasks = (change / "tasks.md").read_text(encoding="utf-8") if files["tasks.md"] else ""
     check = (change / "check.md").read_text(encoding="utf-8") if files["check.md"] else ""
+    owner_m = re.search(r"负责人\s*[:：]\s*([^\n]+)", tasks)
+    owner = owner_m.group(1).strip(" *`-") if owner_m else ""
 
     s_ids = sorted(set(SPEC_ROW.findall(spec)), key=lambda x: int(x[1:]))
     c_ids_check = sorted(c_ids(check), key=lambda x: int(x[1:]))
@@ -149,6 +151,7 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
 
     return {
         "name": change.name,
+        "owner": owner,
         "location": "archive" if archived else "change",
         "files": files,
         "missing": missing,

@@ -2,6 +2,8 @@
 
 ## 接手须知（派发前填满）
 
+- 负责人：lead
+
 - 必读：`spec.md` / `design.md` / `check.md` + 项目级 `0_workbench/spec.md`
 - 环境/前置：docker 可用；仓库只读权限；镜像 tag 记录在 `data/env.txt`
 - 绝对禁止：不改 `scripts/*.sh`；不 push；不动其他文档

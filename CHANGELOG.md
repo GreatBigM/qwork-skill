@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.7.2 (2026-11-14)
+
+### Added
+
+- **负责人（owner）**：`tasks.md` 接手须知新增 `- 负责人：<name>`；`qwork-status --json` 输出 `owner`，人类表格不变。缺负责人只 WARNING，不阻塞开工，兼容存量 change。
+- 模板/两份黄金样例补负责人；`tests/test_tools.py` 增 `test_status_reads_owner`，共 `30 passed`。
+- 版本 4.7.1 → 4.7.2
+
 ## 4.7.1 (2026-11-14)
 
 ### Fixed

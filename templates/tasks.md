@@ -7,6 +7,8 @@
 
 ## 接手须知（派发前填满）
 
+- 负责人：<name>
+
 - 必读：`spec.md` / `design.md` / `check.md`（本目录）+ 项目级 `0_workbench/spec.md`
 - 环境/前置：<设备、IP、工具、构建命令、数据目录>
 - 绝对禁止：<不改 spec/design/check；不 push；不碰 X>

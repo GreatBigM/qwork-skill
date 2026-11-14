@@ -2,6 +2,8 @@
 
 ## 接手须知（派发前填满）
 
+- 负责人：lead
+
 - 必读：`spec.md` / `design.md` / `check.md` + 项目级 `0_workbench/spec.md`
 - 环境/前置：实验机 `192.0.2.10`、串口 `/dev/ttyUSB0`、主机 iperf3 server、A/B 镜像各一份
 - 绝对禁止：不改协议栈 / 中断合并；不 push；不动非目标文件
