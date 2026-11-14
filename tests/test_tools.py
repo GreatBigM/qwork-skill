@@ -276,6 +276,18 @@ def test_close_compares_actual_against_spec_target(tmp_path: Path) -> None:
     assert "不满足 spec S3 目标" in p.stdout + p.stderr
 
 
+def test_status_wip_limit_and_strict(tmp_path: Path) -> None:
+    root, _change = make_project(tmp_path)
+    (root / "0_workbench" / "qwork.conf").write_text("wip_limit=1\n", encoding="utf-8")
+    p = run(STATUS, str(root), "--json", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+    data = json.loads(p.stdout)
+    assert data["wip"] == {"limit": 1, "active": 2, "over": True}
+    p = run(STATUS, str(root), "--strict", cwd=root)
+    assert p.returncode == 1
+    assert "超限" in p.stdout + p.stderr
+
+
 def test_status_reads_owner(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     tasks = change / "tasks.md"

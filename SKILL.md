@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.7.2
+version: 4.7.3
 category: knowledge
 metadata:
   agent:
@@ -141,7 +141,7 @@ metadata:
 - `references/local/*.md` — 本机实践扩展（不随上游更新覆盖）
 - `tools/qwork-check.py` — 派发/收口门：`--dispatch` / `--close` / `--strict` / `--json`
 - `tools/qwork-archive.py` — 归档事务：close 门 → `git mv` → archive ignore 镜像 → 复核；`--dry-run` / `--commit`
-- `tools/qwork-status.py` — 全项目进度：四要素 / 任务 / C 覆盖 / 下一步；`--json`
+- `tools/qwork-status.py` — 全项目进度：四要素 / 任务 / C 覆盖 / 下一步；`--json`；`--strict` 在 WIP 超限时退出 1；WIP 上限读 `QWORK_WIP_LIMIT` 或 `0_workbench/qwork.conf` 的 `wip_limit=`（0/缺省=不限）。
 - `examples/` — 两份填满的黄金样例（`doc-change` 文档类、`experiment-change` 实验类），照抄结构而不是照抄数字
 
 ## 支持文件清单

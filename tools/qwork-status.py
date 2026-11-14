@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -77,6 +78,23 @@ def task_stats(text: str) -> tuple[int, int, int, list[str]]:
 
 def c_ids(text: str) -> set[str]:
     return set(CHECK_ROW.findall(text))
+
+
+def wip_limit(wb: Path) -> int:
+    """WIP 上限：QWORK_WIP_LIMIT 环境变量优先，其次 0_workbench/qwork.conf 的 wip_limit=；0=不限。"""
+    raw = os.environ.get("QWORK_WIP_LIMIT", "").strip()
+    if not raw:
+        conf = wb / "qwork.conf"
+        if conf.is_file():
+            for line in conf.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("wip_limit") and "=" in line:
+                    raw = line.split("=", 1)[1].strip()
+                    break
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return 0
 
 
 def close_gate(change: Path) -> tuple[int, list[str]] | None:
@@ -182,7 +200,7 @@ def scan(wb: Path) -> list[dict]:
     return out
 
 
-def human(wb: Path, rows: list[dict]) -> None:
+def human(wb: Path, rows: list[dict], wip: dict) -> None:
     print(f"项目: {wb.parent}")
     if not rows:
         print("（change/ 与 archive/ 下都没有 change）")
@@ -198,12 +216,16 @@ def human(wb: Path, rows: list[dict]) -> None:
         print(f"{r['location']:<8} {r['name']:<24} {four:<6} {tasks:<10} {closure:<8} {cover:<10} {r['state']:<20} {r['next']}")
     active = sum(1 for r in rows if r["location"] == "change")
     print(f"\n合计：{active} 个在 change/，{len(rows) - active} 个在 archive/")
+    if wip["limit"]:
+        extra = "（超限：先收口/归档再开新 change）" if wip["over"] else ""
+        print(f"WIP：{active}/{wip['limit']}{extra}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="qwork 进度总览")
     ap.add_argument("path", nargs="?", default=".", help="项目根或任意子目录（默认当前目录）")
     ap.add_argument("--json", action="store_true", help="JSON 输出")
+    ap.add_argument("--strict", action="store_true", help="WIP 超限时退出 1")
     args = ap.parse_args()
 
     start = Path(args.path).resolve()
@@ -212,18 +234,22 @@ def main() -> int:
         print(f"❌ 找不到 0_workbench（从 {start} 向上）", file=sys.stderr)
         return 1
     rows = scan(wb)
+    active = sum(1 for r in rows if r["location"] == "change")
+    limit = wip_limit(wb)
+    wip = {"limit": limit, "active": active, "over": bool(limit and active > limit)}
     if args.json:
         print(json.dumps({
             "project": str(wb.parent),
             "changes": rows,
             "summary": {
-                "change": sum(1 for r in rows if r["location"] == "change"),
+                "change": active,
                 "archive": sum(1 for r in rows if r["location"] == "archive"),
             },
+            "wip": wip,
         }, ensure_ascii=False, indent=2))
     else:
-        human(wb, rows)
-    return 0
+        human(wb, rows, wip)
+    return 1 if args.strict and wip["over"] else 0
 
 
 if __name__ == "__main__":

@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.7.3 (2026-11-14)
+
+### Added
+
+- **WIP 上限**：`qwork-status` 读 `QWORK_WIP_LIMIT` 或 `0_workbench/qwork.conf` 的 `wip_limit=`（0/缺省不限），输出 `WIP: N/limit`，超限提示先收口/归档；`--strict` 超限退出 1。JSON 增加 `wip {limit, active, over}`。
+- `tests/test_tools.py` 增 `test_status_wip_limit_and_strict`，共 `31 passed`。
+- 版本 4.7.2 → 4.7.3
+
 ## 4.7.2 (2026-11-14)
 
 ### Added

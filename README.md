@@ -115,10 +115,12 @@ python3 tools/qwork-archive.py 0_workbench/change/<name>          # 预演加 --
 python3 tools/qwork-archive.py 0_workbench/change/<name> --commit
 
 # 全项目进度（change/ + archive/）
-python3 tools/qwork-status.py .            # 或任意子目录；--json
+python3 tools/qwork-status.py .            # 或任意子目录；--json；--strict 检查 WIP 超限
 ```
 
 > `tools/` 在仓库根或安装后的 skill 目录（如 `~/.dsh/skills/qwork/tools/`），不是用户项目根；装好后把命令里的 `tools/` 换成 `<skill-dir>/tools/`。
+>
+> WIP 上限可选：在 `0_workbench/qwork.conf` 写 `wip_limit=3`，或设 `QWORK_WIP_LIMIT=3`；`qwork-status` 显示 `WIP：N/3`，超限时 `--strict` 退出 1。
 >
 > `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。`qwork-status` 还会把 `[ ]` 同行带 `BLOCKED_*` / `阻塞原因：` / `等待外部` 的任务标成「阻塞（待确认）」，提醒改 `[!]`。
 >
