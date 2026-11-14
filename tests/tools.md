@@ -2,7 +2,7 @@
 
 > 改 `tools/`、模板或门禁语义后跑。全部用临时仓，不动真实项目。
 >
-> 自动化：`python3 -m pytest -q tests/test_tools.py`（11 项，覆盖 close 证据/❌/项目 spec 表行、status 调门、dispatch strict、archive 提交边界与回滚）。
+> 自动化：`python3 -m pytest -q tests/test_tools.py`（13 项，覆盖 close 证据/❌/项目 spec 表行、status/close 阻塞提示、dispatch strict、archive 提交边界与回滚）。
 > 以下为手工补充场景；历史记录中的「工作区干净」不等于「没有越界提交」，以 4.6.1 记录为准。
 
 ## 建 fixture
@@ -74,3 +74,9 @@ python3 "$REPO"/tools/qwork-status.py /tmp/qwa-test --json   # 字段完整
 - check：examples 两份 `--close` 仍 0 error（项目级 spec 检查因不在 0_workbench 下给 warning）；全 ❌ → `存在 ❌ 未通过，但未走「证伪留档」`；假 hash → `commit 证据不存在或不可解析`；目标 ≤15 min、实测 25 min → `不满足目标`；项目 spec 正文提 change 名 → `变更记录` 报错；`--dispatch --strict` 对新 change PASS。
 - archive：`--commit` 后 `git show --name-only` 仅 `0_workbench/archive/demo/*`；另一 change 的 dirty 文件仍留在工作区。pre-commit exit 1 → 命令失败，change 回到原路径、archive 无残留、`.gitignore` 恢复；不再有目录级 fallback。
 - status：C 引用 S9 的 change 显示 `待收口（close 门 N error）`，不再自报「可归档」。
+
+
+## 2026-11-14 / 4.6.2 记录
+
+- pytest：`13 passed`。
+- status：`[ ]` 同行写 `BLOCKED_ENV: 等待设备` → 输出 `阻塞（待确认 1）` 与 `改 [!]`；`--json` 的 `blocked_hints` 为 1。通用词「阻塞」不触发，必须显式 `BLOCKED_*` / `阻塞原因：` / `等待外部` / `等待依赖` / `无法继续`。

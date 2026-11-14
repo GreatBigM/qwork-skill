@@ -120,7 +120,7 @@ python3 tools/qwork-status.py .            # 或任意子目录；--json
 
 > `tools/` 在仓库根或安装后的 skill 目录（如 `~/.dsh/skills/qwork/tools/`），不是用户项目根；装好后把命令里的 `tools/` 换成 `<skill-dir>/tools/`。
 >
-> `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。
+> `qwork-check --close` 现在机检：每个 `[x]` 的 `→` 证据（用户确认日期 / 存在的路径 / 存在的 commit）、❌ 必须走证伪留档、⚠️ 必须有确认日期的阻塞收口、项目级 spec 的「变更记录」表行；`qwork-status` 的终态直接调用 close 门，不再自报「可归档」。`qwork-status` 还会把 `[ ]` 同行带 `BLOCKED_*` / `阻塞原因：` / `等待外部` 的任务标成「阻塞（待确认）」，提醒改 `[!]`。
 >
 > 旧格式：spec 顶部标 `> retroactive` 的存量按 WARNING 降级；未标的按新格式报错（先标标记再补结构，不靠删表头绕过）。
 >

@@ -1,6 +1,7 @@
 """qwork 工具回归（pytest）。全部在 tmp_path 内建仓，不动真实项目。"""
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -95,6 +96,31 @@ def test_status_uses_close_gate(tmp_path: Path) -> None:
     p = run(STATUS, str(root), cwd=root)
     assert p.returncode == 0, p.stderr
     assert "close 门" in p.stdout
+
+
+def test_close_hints_unchecked_blocked_task(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("- [x]", "- [ ] BLOCKED_ENV: 等待设备", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "含阻塞标记" in p.stdout + p.stderr
+    assert "改 [!]" in p.stdout + p.stderr
+
+
+def test_status_flags_unchecked_blocked_hint(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("- [x]", "- [ ] BLOCKED_ENV: 等待设备", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(STATUS, str(root), cwd=root)
+    assert p.returncode == 0, p.stderr
+    assert "阻塞（待确认 1）" in p.stdout
+    assert "改 [!]" in p.stdout
+    pj = run(STATUS, str(root), "--json", cwd=root)
+    data = json.loads(pj.stdout)
+    assert data["changes"][0]["blocked_hints"] == 1
 
 
 def test_dispatch_strict_passes_new_change(tmp_path: Path) -> None:

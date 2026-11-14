@@ -20,6 +20,7 @@ from pathlib import Path
 S_ID = re.compile(r"^S\d+$")
 C_ID = re.compile(r"^C\d+$")
 STATUS_LINE = re.compile(r"^\s*-\s+\[( |x|X|!)\]\s+(.*)$")
+BLOCKED_HINT = re.compile(r"(BLOCKED_[A-Z0-9_]+|阻塞原因\s*[:：]|等待外部|等待依赖|无法继续)", re.I)
 FENCE = re.compile(r"^\s*(```|~~~)")
 HASH = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
@@ -400,7 +401,11 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
     blocked = [d for s, d in states if s == "!"]
     if mode == "close":
         if build_unchecked:
-            f.error(f"tasks 仍有 {build_unchecked} 个未完成项（[ ]）")
+            hint_unchecked = [d for d in unchecked if BLOCKED_HINT.search(d)]
+            if hint_unchecked:
+                f.error(f"tasks 仍有 {build_unchecked} 个未完成项（[ ]），其中 {len(hint_unchecked)} 项含阻塞标记；先改 [!] 并走阻塞收口")
+            else:
+                f.error(f"tasks 仍有 {build_unchecked} 个未完成项（[ ]）")
         if blocked:
             if not has_blocked_closure(spec_text, tasks):
                 f.error("存在 [!] 阻塞项，但未走「阻塞收口」（spec 顶部需 ⚠️ 阻塞收口，tasks 需 ⚠️ 阻塞交付 + 用户确认日期）")

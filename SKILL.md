@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.6.1
+version: 4.6.2
 category: knowledge
 metadata:
   agent:
@@ -84,7 +84,7 @@ metadata:
 
 ## §3 施工
 
-- **task 状态**：`[ ]` 未做 / `[x]` 完成（附 commit 短 hash 或证据）/ `[!]` 阻塞（同行写原因与解除条件；未解除不得以「通过」归档，走 §4 阻塞收口）。
+- **task 状态**：`[ ]` 未做 / `[x]` 完成（附 commit 短 hash 或证据）/ `[!]` 阻塞（同行写原因与解除条件；未解除不得以「通过」归档，走 §4 阻塞收口）。若 `[ ]` 同行已写 `BLOCKED_*` / `阻塞原因：` / `等待外部`，`qwork-status` 会显示「阻塞（待确认）」并提示改 `[!]`；它只提示，不自动改状态。
 - **每阶段记 commit 短 hash**（本地 commit，不 push 除非用户要求）；它是回退基线。
 - **颗粒拆细**：分析（只读）→ 执行（只改）→ 编译 → 验证，不混在一个任务里；单任务目标 ≤3。
 - **规范先行**：失败先定位根因（只读）→ 更新 design/tasks（标废弃 + 回退方案）→ 再改代码；不许先改代码后补规范。

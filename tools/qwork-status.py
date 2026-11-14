@@ -18,6 +18,7 @@ from pathlib import Path
 FOUR = ("spec.md", "design.md", "tasks.md", "check.md")
 FENCE = re.compile(r"^\s*(```|~~~)")
 CHECKBOX = re.compile(r"^\s*-\s+\[( |x|X|!)\]\s+(.*)$")
+BLOCKED_HINT = re.compile(r"(BLOCKED_[A-Z0-9_]+|阻塞原因\s*[:：]|等待外部|等待依赖|无法继续)", re.I)
 SPEC_ROW = re.compile(r"^\|\s*(S\d+)\s*\|", re.M)
 CHECK_ROW = re.compile(r"^\|\s*(C\d+)\s*\|", re.M)
 CHECK = Path(__file__).with_name("qwork-check.py")
@@ -51,8 +52,9 @@ def has_section(text: str, *keywords: str) -> bool:
     return any(line.startswith("## ") and any(k in line for k in keywords) for line in text.splitlines())
 
 
-def task_stats(text: str) -> tuple[int, int, int]:
+def task_stats(text: str) -> tuple[int, int, int, list[str]]:
     total = done = blocked = 0
+    hints: list[str] = []
     in_fence = False
     for line in text.splitlines():
         if FENCE.match(line):
@@ -68,7 +70,9 @@ def task_stats(text: str) -> tuple[int, int, int]:
             done += 1
         elif m.group(1) == "!":
             blocked += 1
-    return total, done, blocked
+        elif not m.group(1).strip() and BLOCKED_HINT.search(m.group(2)):
+            hints.append(m.group(2).strip())
+    return total, done, blocked, hints
 
 
 def c_ids(text: str) -> set[str]:
@@ -101,12 +105,12 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
     results = section(tasks, "验收结果")
     c_ids_result = sorted(c_ids(results), key=lambda x: int(x[1:]))
     missing_results = [c for c in c_ids_check if c not in set(c_ids_result)]
-    total, done, blocked = task_stats(tasks)
+    total, done, blocked, blocked_hints = task_stats(tasks)
     unchecked = total - done - blocked
     pspec = wb / "spec.md"
     spec_logged = pspec.is_file() and change.name in pspec.read_text(encoding="utf-8")
     closure_present = has_section(tasks, "收口")
-    ctotal, cdone, cblocked = task_stats(section(tasks, "收口")) if closure_present else (0, 0, 0)
+    ctotal, cdone, cblocked, _ = task_stats(section(tasks, "收口")) if closure_present else (0, 0, 0, [])
     cunchecked = ctotal - cdone - cblocked
     build_unchecked = max(0, unchecked - cunchecked)
 
@@ -119,6 +123,9 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
     elif blocked:
         state = f"阻塞（{blocked}）"
         action = "走阻塞收口" if "阻塞收口" in spec else "解除阻塞"
+    elif blocked_hints:
+        state = f"阻塞（待确认 {len(blocked_hints)}）"
+        action = "改 [!] 并走阻塞收口" if "阻塞收口" in spec else "确认后改 [!]"
     elif build_unchecked:
         state, action = f"施工中（剩 {build_unchecked}）", "继续施工"
     elif not closure_present:
@@ -150,6 +157,8 @@ def inspect(change: Path, archived: bool, wb: Path) -> dict:
         "result_ids": c_ids_result,
         "missing_results": missing_results,
         "tasks": {"total": total, "done": done, "blocked": blocked, "unchecked": unchecked},
+        "blocked_hints": len(blocked_hints),
+        "blocked_hint_tasks": blocked_hints[:3],
         "closure": {"present": closure_present, "total": ctotal, "done": cdone, "blocked": cblocked, "unchecked": cunchecked},
         "project_spec_logged": spec_logged,
         "state": state,

@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.6.2 (2026-11-14)
+
+### Added（阻塞提示）
+
+- **status 识别未勾任务里的阻塞标记**：`[ ]` 同行写 `BLOCKED_*`、`阻塞原因：`、`等待外部`、`等待依赖`、`无法继续` 时，不再显示「施工中」，改为「阻塞（待确认 N）」+「改 [!] 并走阻塞收口」；`--json` 增加 `blocked_hints` 与 `blocked_hint_tasks`。只提示，不自动改状态。
+- SKILL §3 / SCHEMA §三 / README 工具段补对应说明。
+
+### Tests
+
+- `tests/test_tools.py` 增加 status/close 阻塞提示回归，`13 passed`；`tests/tools.md` 补 4.6.2 记录。
+
+- 版本 4.6.1 → 4.6.2
+
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
 ## 4.6.1 (2026-11-14)
