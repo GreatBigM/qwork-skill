@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.8.1 (2026-11-14)
+
+### Added
+
+- `qwork-check --close --require-logs`：每个「自动」C 必须有 `change/data/check-<C>.log`，且日志中 `exit=0`；缺失或失败不能收口。默认不开启，团队可自行选择强制。
+- `tests/test_tools.py` 增 2 项（缺日志/日志通过），`35 passed`。
+- 版本 4.8.0 → 4.8.1
+
 ## 4.8.0 (2026-11-14)
 
 ### Added

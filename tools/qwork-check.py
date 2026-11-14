@@ -38,6 +38,7 @@ class Findings:
         self.warnings: list[str] = []
         self.verdicts = {"pass": 0, "fail": 0, "blocked": 0}
         self.rejected = False
+        self.auto_ids: set[str] = set()
 
     def error(self, msg: str) -> None:
         self.errors.append(msg)
@@ -331,6 +332,8 @@ def check_check(change: Path, spec_ids: dict[str, str] | None, f: Findings, lega
             typ = cell(row, type_i)
             if typ and typ not in ("自动", "人工"):
                 f.error(f"check {cid} 类型必须是「自动」或「人工」（当前 {typ!r}）")
+            if typ == "自动" and C_ID.match(cid):
+                f.auto_ids.add(cid)
         ids[cid] = ref
     if not ids:
         f.error("check 验收表没有有效数据行")
@@ -579,6 +582,8 @@ def main() -> int:
     mode.add_argument("--close", action="store_true", help="收口前检查")
     ap.add_argument("--strict", action="store_true", help="warning 也算失败")
     ap.add_argument("--json", action="store_true", help="JSON 输出")
+    ap.add_argument("--require-logs", action="store_true",
+                    help="close 时要求每个自动项有 data/check-<C>.log 且 exit=0")
     args = ap.parse_args()
 
     change = Path(args.change).resolve()
@@ -600,6 +605,13 @@ def main() -> int:
     check_ids = check_check(change, spec_ids, f, legacy)
     check_tasks(change, mode_name, spec_text, check_ids, spec_ids, f, legacy)
     check_project_spec(change, mode_name, f, legacy)
+    if args.require_logs and mode_name == "close":
+        for cid in sorted(f.auto_ids, key=lambda x: int(x[1:])):
+            log = change / "data" / f"check-{cid}.log"
+            if not log.is_file():
+                f.error(f"自动项 {cid} 缺少 {log.relative_to(change)}；先跑 qwork-run.py --only {cid}")
+            elif not any(line.strip() == "exit=0" for line in read(log).splitlines()):
+                f.error(f"自动项 {cid} 的 {log.relative_to(change)} 未见 exit=0；执行失败不能按通过收口")
     return emit(f, mode_name, args)
 
 

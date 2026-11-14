@@ -289,6 +289,23 @@ def test_status_wip_limit_and_strict(tmp_path: Path) -> None:
     assert "超限" in p.stdout + p.stderr
 
 
+def test_close_require_logs_rejects_missing(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    p = run(CHECK, str(change), "--close", "--require-logs", cwd=root)
+    assert p.returncode != 0
+    assert "自动项 C1 缺少 data/check-C1.log" in p.stdout + p.stderr
+
+
+def test_close_require_logs_accepts_passing_logs(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    data = change / "data"
+    data.mkdir(exist_ok=True)
+    for cid in ("C1", "C2", "C3", "C4"):
+        (data / f"check-{cid}.log").write_text("$ true\nexit=0\n", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", "--require-logs", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+
+
 def test_run_executes_auto_check(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     check = change / "check.md"
