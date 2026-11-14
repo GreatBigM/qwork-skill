@@ -116,6 +116,7 @@ python3 tools/qwork-archive.py 0_workbench/change/<name> --commit
 
 # 全项目进度（change/ + archive/）
 python3 tools/qwork-status.py .            # 或任意子目录；--json；--strict 检查 WIP 超限
+python3 tools/qwork-run.py 0_workbench/change/<name> --dry-run   # 可选：执行自动项并落 data/check-C*.log
 ```
 
 > `tools/` 在仓库根或安装后的 skill 目录（如 `~/.dsh/skills/qwork/tools/`），不是用户项目根；装好后把命令里的 `tools/` 换成 `<skill-dir>/tools/`。

@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.8.0 (2026-11-14)
+
+### Added
+
+- **可选执行器 `tools/qwork-run.py`**：解析 check.md 的验收表，只执行「自动」行中反引号命令，stdout/stderr/退出码落 `change/data/check-<C>.log`；支持 `--dry-run`、`--only C1,C2`、`--timeout`。command 失败/超时退出 1；不修改 tasks/check，不替代 `qwork-check --close`。
+- `tests/test_tools.py` 增 2 项（自动项成功落日志 / 失败退出 1），`33 passed`。
+- 版本 4.7.3 → 4.8.0
+
 ## 4.7.3 (2026-11-14)
 
 ### Added

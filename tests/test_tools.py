@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "tools" / "qwork-check.py"
 ARCHIVE = ROOT / "tools" / "qwork-archive.py"
 STATUS = ROOT / "tools" / "qwork-status.py"
+RUN = ROOT / "tools" / "qwork-run.py"
 EXAMPLE = ROOT / "examples" / "doc-change"
 
 
@@ -286,6 +287,27 @@ def test_status_wip_limit_and_strict(tmp_path: Path) -> None:
     p = run(STATUS, str(root), "--strict", cwd=root)
     assert p.returncode == 1
     assert "超限" in p.stdout + p.stderr
+
+
+def test_run_executes_auto_check(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    check = change / "check.md"
+    text = check.read_text(encoding="utf-8").replace("`bash scripts/build.sh --strict`", "`printf ok`", 1)
+    check.write_text(text, encoding="utf-8")
+    p = run(RUN, str(change), "--only", "C1", cwd=root)
+    assert p.returncode == 0, p.stdout + p.stderr
+    log = change / "data" / "check-C1.log"
+    assert log.is_file() and "exit=0" in log.read_text(encoding="utf-8")
+
+
+def test_run_reports_failed_auto_check(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    check = change / "check.md"
+    text = check.read_text(encoding="utf-8").replace("`bash scripts/build.sh --strict`", "`false`", 1)
+    check.write_text(text, encoding="utf-8")
+    p = run(RUN, str(change), "--only", "C1", cwd=root)
+    assert p.returncode == 1
+    assert "exit=1" in (change / "data" / "check-C1.log").read_text(encoding="utf-8")
 
 
 def test_status_reads_owner(tmp_path: Path) -> None:
