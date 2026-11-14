@@ -317,8 +317,16 @@ def check_check(change: Path, spec_ids: dict[str, str] | None, f: Findings, lega
             f.error(f"check {cid} 缺检查方法")
         elif PLACEHOLDER.search(method):
             f.error(f"check {cid} 检查方法仍是占位符：{method[:60]}")
-        if verdict_i is not None and not cell(row, verdict_i):
+        judge = cell(row, verdict_i) if verdict_i is not None else ""
+        if verdict_i is not None and not judge:
             f.error(f"check {cid} 缺判定口径")
+        elif judge and re.search(r"[≤≥<>]|\d+(?:\.\d+)?\s*[×x]\s*\d", judge):
+            msg = (f"check {cid} 判定口径含数值比较/倍数：{judge[:60]!r}；"
+                   "阈值只写 spec，check 写「按 spec Sx 判定」")
+            if legacy:
+                f.warn("legacy（retroactive）：" + msg)
+            else:
+                f.error(msg)
         if type_i is not None:
             typ = cell(row, type_i)
             if typ and typ not in ("自动", "人工"):
@@ -399,7 +407,7 @@ def has_blocked_closure(spec_text: str, tasks: str) -> bool:
 
 
 def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, str] | None,
-                f: Findings, legacy: bool) -> None:
+                spec_targets: dict[str, str] | None, f: Findings, legacy: bool) -> None:
     path = change / "tasks.md"
     if not path.is_file():
         f.error("tasks.md 缺失")
@@ -468,9 +476,16 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
             if not actual or actual in ("—", "-", "待测", "TBD", "<实测>"):
                 f.error(f"验收结果 {rid} 判定为 ✅，但「实测」为空或占位")
             else:
-                ok = numeric_compare(cell(row, target_i), actual)
+                target = cell(row, target_i)
+                ok = numeric_compare(target, actual)
                 if ok is False:
-                    f.error(f"验收结果 {rid} 实测 {actual!r} 不满足目标 {cell(row, target_i)!r}")
+                    f.error(f"验收结果 {rid} 实测 {actual!r} 不满足目标 {target!r}")
+                ref = check_ids.get(rid) if check_ids else None
+                spec_target = spec_targets.get(ref) if spec_targets and ref else None
+                if spec_target and spec_target != target:
+                    ok = numeric_compare(spec_target, actual)
+                    if ok is False:
+                        f.error(f"验收结果 {rid} 实测 {actual!r} 不满足 spec {ref} 目标 {spec_target!r}")
         if verdict == "⚠️" and not has_blocked_closure(spec_text, tasks):
             f.error(f"验收结果 {rid} 标了 ⚠️ 阻塞交付，但未走「阻塞收口」（spec 标 ⚠️ 阻塞收口 + tasks 记 ⚠️ 阻塞交付 + 用户确认日期）")
 
@@ -546,6 +561,9 @@ def check_project_spec(change: Path, mode: str, f: Findings, legacy: bool) -> No
         if "|" in stripped:
             cells = split_row(stripped)
             if change.name in cells:
+                if len([c for c in cells if c.strip()]) < 3:
+                    f.error(f"项目级 spec.md 的 {change.name} 行内容不完整；请写：| YYYY-MM-DD | {change.name} | 改了什么 |")
+                    return
                 return
     f.error(f"项目级 spec.md 的「变更记录」没有 {change.name} 行；请加：| YYYY-MM-DD | {change.name} | 改了什么 |")
 
@@ -577,7 +595,7 @@ def main() -> int:
     legacy = is_retroactive(spec_text)
     spec_ids = check_spec(change, f, legacy)
     check_ids = check_check(change, spec_ids, f, legacy)
-    check_tasks(change, mode_name, spec_text, check_ids, f, legacy)
+    check_tasks(change, mode_name, spec_text, check_ids, spec_ids, f, legacy)
     check_project_spec(change, mode_name, f, legacy)
     return emit(f, mode_name, args)
 

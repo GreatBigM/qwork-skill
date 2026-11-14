@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.7.1 (2026-11-14)
+
+### Fixed
+
+- **阈值单一来源**：check「判定口径」含 `≤/≥/</>/×N` 等数值比较/倍数时 FAIL（legacy 只警告），强制写「按 spec Sx 判定」，避免 spec/check 双阈值漂移。
+- **实测对 spec**：tasks 的 ✅ 实测除对比任务行目标外，也按 C→S 对比 spec 目标；spec 收紧而 tasks 仍用旧值时 FAIL。
+- **变更记录完整行**：项目级 spec 的 change 行必须日期/change/摘要三格非空，只有 change 名或空摘要 FAIL。
+- `tests/test_tools.py` 增 3 项（check 数值副本、变更记录空摘要、实测对 spec 目标），`29 passed`。
+- 版本 4.7.0 → 4.7.1
+
 ## 4.7.0 (2026-11-14)
 
 ### Docs（冷启动补丁）

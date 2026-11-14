@@ -244,6 +244,38 @@ def test_close_rejects_blocked_task_with_final_pass(tmp_path: Path) -> None:
     assert "存在 [!] 阻塞任务" in p.stdout + p.stderr
 
 
+def test_close_rejects_numeric_threshold_in_check(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    check = change / "check.md"
+    text = check.read_text(encoding="utf-8")
+    text = text.replace("按 spec S3 目标判定（目标值见 spec）", "≤15 min", 1)
+    check.write_text(text, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "判定口径含数值比较/倍数" in p.stdout + p.stderr
+
+
+def test_close_rejects_incomplete_project_spec_row(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    spec = root / "0_workbench" / "spec.md"
+    spec.write_text("# 项目\n\n## 变更记录\n\n| 日期 | change | 摘要 |\n|------|--------|------|\n"
+                    "| 2026-11-14 | demo | |\n", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "行内容不完整" in p.stdout + p.stderr
+
+
+def test_close_compares_actual_against_spec_target(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = change / "tasks.md"
+    text = tasks.read_text(encoding="utf-8")
+    text = text.replace("| C3 | S3: ≤15 min | 14 min | ✅ |", "| C3 | 按 spec S3 判定 | 25 min | ✅ |", 1)
+    tasks.write_text(text, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "不满足 spec S3 目标" in p.stdout + p.stderr
+
+
 def test_status_flags_unchecked_blocked_hint(tmp_path: Path) -> None:
     root, change = make_project(tmp_path)
     tasks = (change / "tasks.md").read_text(encoding="utf-8")
