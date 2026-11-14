@@ -8,3 +8,6 @@ __pycache__/
 
 # 本机私用脱敏名单（真名不入仓）
 scripts/publish-deny.local
+
+# 本机实践扩展（不随上游更新，安装时保留）
+references/local/

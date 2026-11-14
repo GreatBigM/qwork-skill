@@ -2,6 +2,31 @@
 
 本文件记录版本历史。版本号定义在 SKILL.md frontmatter 的 `version` 字段（单一真相源）。
 
+## 4.0.0 (2026-11-14)
+
+### Changed（结构性重构：通用流程与领域手册分离 + 跨技能契约对齐）
+
+- **SKILL.md 瘦身 12.4k → 4.8k 字符（-61%）**：驱动 CONFIG A/B、固件换版、长测等约 1/3 篇幅移入 `references/experiment-playbook.md`；对话分离、子代理、核验三查、并发防护移入 `references/execution-handoff.md`。SKILL 只留操作流程 + 指针。
+- **新增 §0 定位与开工自检**：项目根 / `0_workbench/` 查找规则、缺失时按 SCHEMA §一 建树、开工四查——此前「在哪建 change」无规则。
+- **DSH 适配**：删 `execute_code`、`~/.hermes/cache/...`、`ps aux | grep hermes` 等外部运行时残留；子代理/后台作业改平台中性表述并给 DSH 工具映射（`subagent`、`bash` run_in_background + `job_output`）。
+- **知识沉淀衔接去耦（SCHEMA §四）**：只保留产出物交接与边界（产出物不进 change 目录、写清来源 change、闭环必检），不再复述知识库侧的目录/命名/登记规则——规则归知识库侧，避免两套口径漂移。
+- **`change/data/` 纳入宪法**：§一/§二 定义原始产物落点；数字结论回填 tasks。
+- **`[!]` 阻塞态定义**：未解除不得归档；补 change 命名约定（kebab-case、不带日期、先查重）。
+- **模板去假状态**：tasks 模板不再预置 `[x]` 与 ✅/❌ 结论；check 模板按验收维度自由分组；design 模板补「观测点」节。
+- **反模式表更新**：素材 YAML 头、模板预置勾选、结论写 check、占位符当命令、假收口。
+- **闭环可执行性修复（首轮功能探针驱动）**：收口清单①改为「tasks 全 `[x]` 且无未解除 `[!]`」；新增阻塞收口；补 `git mv`/ignore 迁移、半残 workbench 补齐、`AGENTS.md` 必读、基线未测的相对目标与回填规则、测量口径、知识库缺失兜底、改需求同步链。
+- **二轮探针修复**：开单即提交；change 级变更记录与「失效任务重开」规则；底线/测量口径兜底；design 未勘察项标记；阻塞态 `[ ]→[!]` 转换与自查；check 可执行性要求；`git mv` 前置建 archive 与提交信息；存量 `data/` 不强制迁出；§七 仅用于从零初始化；实验裁决阈值归 spec。
+- **三轮探针收尾**：design 文档命名（`<主题>-design.md`）、空白骨架的项目 spec 兜底、目标上调的可行性/底线校验、知识库技能发现措辞。
+
+### Added（安装与维护机制）
+
+- `install.sh` 新增 `--local`（用当前 checkout 安装/验证，不克隆远端）与 `--check`（对比安装副本与源清单，非 0 退出即漂移）。
+- `install.sh` 用 `INSTALL_FILES`/`INSTALL_DIRS` 单一清单驱动拷贝与校验；新增 `references/local/` 约定：升级时保留本地实践文件。
+- `.gitignore` 排除 `references/local/`。
+- README 更新：安装命令、本机扩展、仓库结构、快速上手。
+
+- 版本 3.4.4 → 4.0.0
+
 ## 3.4.4 (2026-11-09)
 
 ### Changed
