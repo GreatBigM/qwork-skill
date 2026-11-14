@@ -2,7 +2,7 @@
 
 > 改 `tools/`、模板或门禁语义后跑。全部用临时仓，不动真实项目。
 >
-> 自动化：`python3 -m pytest -q tests/test_tools.py`（17 项，覆盖 close 证据/❌/最终结论、项目 spec 表行、status/close 阻塞提示、dispatch strict、archive 提交边界/回滚/预演）。
+> 自动化：`python3 -m pytest -q tests/test_tools.py`（26 项，覆盖 close 证据/❌/最终结论/骨架/阻塞自洽/占位符、项目 spec 表行、status/close 阻塞提示、dispatch strict、archive 提交边界/回滚/预演）。
 > 以下为手工补充场景；历史记录中的「工作区干净」不等于「没有越界提交」，以 4.6.1 记录为准。
 
 ## 建 fixture
@@ -86,3 +86,8 @@ python3 "$REPO"/tools/qwork-status.py /tmp/qwa-test --json   # 字段完整
 - pytest：`17 passed`。
 - close：全 ✅ 但 `最终：❌ 未通过` → FAIL；删掉 `最终：` 行 → FAIL；`# 验收` 标题仍能识别表格。
 - archive `--dry-run`：close 门 FAIL 时先打印项目根/归档路径/`close 门 : FAIL`/预演结束，再打印门禁 error。
+
+## 2026-11-14 / 4.6.4 记录
+
+- pytest：`26 passed`。
+- close：空证据文件、`[x] BLOCKED_ENV`/`等待摄像头`、空 design、缺/空项目 `design/`、`最终：通过（P1 未验证）`、`[!]` 阻塞任务却写最终通过、`<命令>` 均 FAIL；practice 归档 change 仍 PASS。

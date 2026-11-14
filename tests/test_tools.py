@@ -36,6 +36,9 @@ def make_project(tmp_path: Path, name: str = "demo") -> tuple[Path, Path]:
     tasks = (change / "tasks.md").read_text(encoding="utf-8")
     tasks = tasks.replace("→ 证据: data/evidence.md", "→ 用户确认: 用户 2026-11-14 验收")
     (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    design = root / "0_workbench" / "design"
+    design.mkdir()
+    (design / "notes.md").write_text("# design\n\n测试用。\n", encoding="utf-8")
     (root / "0_workbench" / "spec.md").write_text(
         "# 项目\n\n## 变更记录\n\n| 日期 | change | 摘要 |\n|------|--------|------|\n"
         f"| 2026-11-14 | {name} | 测试 |\n", encoding="utf-8")
@@ -148,6 +151,97 @@ def test_section_accepts_hash_heading(tmp_path: Path) -> None:
     (change / "check.md").write_text(check, encoding="utf-8")
     p = run(CHECK, str(change), "--close", cwd=root)
     assert p.returncode == 0, p.stdout + p.stderr
+
+
+def test_close_rejects_missing_project_design(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    shutil.rmtree(root / "0_workbench" / "design")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "0_workbench/design/ 缺失" in p.stdout + p.stderr
+
+
+def test_close_rejects_empty_evidence_file(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    evidence = change / "data" / "evidence.md"
+    evidence.write_text("", encoding="utf-8")
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("→ 用户确认: 用户 2026-11-14 验收", "→ 证据: data/evidence.md")
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "证据文件为空" in p.stdout + p.stderr
+
+
+def test_close_rejects_checked_blocked_task(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("- [x]", "- [x] BLOCKED_ENV: 等待设备", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "含阻塞/未验证标记" in p.stdout + p.stderr
+
+
+def test_close_rejects_empty_design(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    (change / "design.md").write_text("", encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "design.md 为空" in p.stdout + p.stderr
+
+
+def test_close_rejects_mixed_final(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("最终：通过", "最终：通过（P1 未验证）", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "含未验证/阻塞字样" in p.stdout + p.stderr
+
+
+def test_close_rejects_placeholder_check_method(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    check = (change / "check.md").read_text(encoding="utf-8")
+    check = check.replace("`bash scripts/build.sh --strict`", "`<命令>`", 1)
+    (change / "check.md").write_text(check, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "检查方法仍是占位符" in p.stdout + p.stderr
+
+
+def test_close_rejects_empty_project_design(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    design = root / "0_workbench" / "design"
+    shutil.rmtree(design)
+    design.mkdir()
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "design/ 缺失或为空" in p.stdout + p.stderr
+
+
+def test_close_rejects_checked_waiting_task(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("- [x]", "- [x] 等待摄像头", 1)
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "含阻塞/未验证标记" in p.stdout + p.stderr
+
+
+def test_close_rejects_blocked_task_with_final_pass(tmp_path: Path) -> None:
+    root, change = make_project(tmp_path)
+    spec = (change / "spec.md").read_text(encoding="utf-8")
+    (change / "spec.md").write_text("> ⚠️ 阻塞收口：等待设备\n" + spec, encoding="utf-8")
+    tasks = (change / "tasks.md").read_text(encoding="utf-8")
+    tasks = tasks.replace("- [x]", "- [!] 等待设备（解除条件：设备到位后复测）", 1)
+    tasks += "\n⚠️ 阻塞交付\n用户确认: 用户 2026-11-14\n"
+    (change / "tasks.md").write_text(tasks, encoding="utf-8")
+    p = run(CHECK, str(change), "--close", cwd=root)
+    assert p.returncode != 0
+    assert "存在 [!] 阻塞任务" in p.stdout + p.stderr
 
 
 def test_status_flags_unchecked_blocked_hint(tmp_path: Path) -> None:

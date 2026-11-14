@@ -20,7 +20,9 @@ from pathlib import Path
 S_ID = re.compile(r"^S\d+$")
 C_ID = re.compile(r"^C\d+$")
 STATUS_LINE = re.compile(r"^\s*-\s+\[( |x|X|!)\]\s+(.*)$")
-BLOCKED_HINT = re.compile(r"(BLOCKED_[A-Z0-9_]+|阻塞原因\s*[:：]|等待外部|等待依赖|无法继续)", re.I)
+BLOCKED_HINT = re.compile(r"(BLOCKED_[A-Z0-9_]+|阻塞原因\s*[:：]|等待|无法继续)", re.I)
+UNVERIFIED = re.compile(r"(未验证|待验证|未完成|待补)", re.I)
+PLACEHOLDER = re.compile(r"<[^>]+>")
 FENCE = re.compile(r"^\s*(```|~~~)")
 HASH = re.compile(r"^[0-9a-fA-F]{7,40}$")
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
@@ -208,11 +210,18 @@ def check_evidence(desc: str, change: Path, root: Path | None, f: Findings) -> N
             f.error(f"证据路径为空：{desc[:60]}")
             return
         if "用户确认" in content or "确认无需" in content:
+            if DATE.search(content):
+                return
+            f.error(f"证据里写用户确认但缺日期（YYYY-MM-DD）：{desc[:60]}")
             return
         path_token = content.split()[0].strip("`，。;；")
         candidates = [Path(path_token)] if Path(path_token).is_absolute() else []
         candidates += [change / path_token, root / path_token] if root else [change / path_token]
-        if any(p.exists() for p in candidates):
+        existing = [p for p in candidates if p.is_file()]
+        if any(p.stat().st_size > 0 for p in existing):
+            return
+        if existing:
+            f.error(f"证据文件为空：{path_token}（任务：{desc[:60]}）")
             return
         f.error(f"证据路径不存在：{path_token}（任务：{desc[:60]}）")
         return
@@ -303,8 +312,11 @@ def check_check(change: Path, spec_ids: dict[str, str] | None, f: Findings, lega
             f.error(f"check ID 重复：{cid}")
         if spec_ids is not None and ref not in spec_ids:
             f.error(f"check {cid} 引用了不存在的 spec「{ref}」")
-        if not cell(row, method_i):
+        method = cell(row, method_i)
+        if not method:
             f.error(f"check {cid} 缺检查方法")
+        elif PLACEHOLDER.search(method):
+            f.error(f"check {cid} 检查方法仍是占位符：{method[:60]}")
         if verdict_i is not None and not cell(row, verdict_i):
             f.error(f"check {cid} 缺判定口径")
         if type_i is not None:
@@ -470,12 +482,20 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
     m = re.search(r"^\s*最终\s*[:：]\s*(.+)$", tasks, re.M)
     final = m.group(1).strip() if m else ""
     if not final:
-        f.error("tasks 缺「最终：」行（通过 / ❌ 未通过（证伪））")
+        f.error("tasks 缺「最终：」行（通过 / ⚠️ 阻塞交付 / ❌ 未通过（证伪））")
     elif f.verdicts["fail"]:
         if "未通过" not in final and "证伪" not in final:
             f.error(f"存在 ❌ 未通过，但「最终：」写的是 {final!r}；应写「最终：❌ 未通过（证伪）」")
+    elif blocked:
+        if "阻塞" not in final or "通过" in final:
+            f.error(f"存在 [!] 阻塞任务，「最终：」应写「⚠️ 阻塞交付」（不得写通过），当前 {final!r}")
+    elif f.verdicts["blocked"]:
+        if "阻塞" not in final or "通过" in final:
+            f.error(f"存在 ⚠️ 阻塞交付，「最终：」应写「⚠️ 阻塞交付」（不得写通过），当前 {final!r}")
     elif "未通过" in final or "证伪" in final:
         f.error(f"验收结果没有 ❌，但「最终：」写的是 {final!r}；应改为「最终：通过」")
+    elif any(k in final for k in ("未验证", "未完成", "阻塞", "待补")):
+        f.error(f"验收结果全部通过，但「最终：」含未验证/阻塞字样：{final!r}")
 
     if f.verdicts["fail"]:
         design_text = read(change / "design.md") if (change / "design.md").is_file() else ""
@@ -488,10 +508,12 @@ def check_tasks(change: Path, mode: str, spec_text: str, check_ids: dict[str, st
         root = project_root(change)
         for state, desc in states:
             if state in "xX":
+                if BLOCKED_HINT.search(desc) or UNVERIFIED.search(desc):
+                    f.error(f"任务标 [x] 但含阻塞/未验证标记：{desc[:60]}")
                 check_evidence(desc, change, root, f)
 
 
-def check_project_spec(change: Path, mode: str, f: Findings) -> None:
+def check_project_spec(change: Path, mode: str, f: Findings, legacy: bool) -> None:
     if mode != "close":
         return
     parts = change.resolve().parts
@@ -500,6 +522,14 @@ def check_project_spec(change: Path, mode: str, f: Findings) -> None:
         return
     idx = parts.index("0_workbench")
     root = Path(*parts[: idx + 1])
+    design = root / "design"
+    design_empty = design.is_dir() and not any(design.iterdir())
+    if not design.is_dir() or design_empty:
+        msg = "项目级 0_workbench/design/ 缺失或为空：归档前先补骨架并把 design 要点合并进去"
+        if legacy:
+            f.warn("legacy（retroactive）：" + msg)
+        else:
+            f.error(msg)
     pspec = root / "spec.md"
     if not pspec.is_file():
         f.error("项目级 0_workbench/spec.md 缺失")
@@ -540,13 +570,15 @@ def main() -> int:
 
     if not (change / "design.md").is_file():
         f.error("design.md 缺失")
+    elif not read(change / "design.md").strip():
+        f.error("design.md 为空")
 
     spec_text = read(change / "spec.md") if (change / "spec.md").is_file() else ""
     legacy = is_retroactive(spec_text)
     spec_ids = check_spec(change, f, legacy)
     check_ids = check_check(change, spec_ids, f, legacy)
     check_tasks(change, mode_name, spec_text, check_ids, f, legacy)
-    check_project_spec(change, mode_name, f)
+    check_project_spec(change, mode_name, f, legacy)
     return emit(f, mode_name, args)
 
 
