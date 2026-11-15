@@ -2,7 +2,7 @@
 
 > **定位**：SCHEMA = 做成什么样（workbench 任务体系目标态：目录结构/四要素边界/流转规则/产出规范）；SKILL = 怎么做（操作流程）。平级互补，SKILL 的操作实现本文定义的目标态。
 > 2026-07-24 讨论定稿。任务体系跟代码走，知识产出留在知识库。
-> Last updated: 2026-11-15（v4.9.1：CI 显式安装 pytest；技能行为无变更）
+> Last updated: 2026-11-15（v4.9.2：固化 workbench/change/work/tasks 术语；无校验行为变更）
 
 ## 一、边界划分
 
@@ -18,7 +18,7 @@
 │   │   └── <change_name>/
 │   │       ├── spec.md      ← 规格（要什么：成功标准+约束）
 │   │       ├── design.md    ← 设计（怎么改）
-│   │       ├── tasks.md     ← 执行台账（做到哪 + 阶段结论 + 收口）
+│   │       ├── tasks.md     ← 路书与推进记录（做到哪 + 阶段结论 + 收口）
 │   │       ├── check.md     ← 验收（怎么算完）
 │   │       └── data/        ← 原始产物（日志/脚本输出/实验矩阵，可 gitignore）
 │   └── archive/             ← 已闭环（扁平，不分成败子目录）
@@ -26,6 +26,8 @@
 ```
 
 AGENTS.md 在代码仓顶层——无论 workbench 是否存在，AI 都能独立工作。workbench 是任务管理的附加层，不绑定 AI 入口。
+
+**术语**：workbench 是集合（所有 change）；change 是单次任务；work 是过程体/动作层（从开工到收口，不落盘）；tasks 是 change 的路书与推进记录（归 change，被 work 使用）。`tasks` 全勾含收口 = change 完结。
 
 四要素是**文档**；`change/<name>/data/` 是原始产物落点（细则见 §二「任务状态与命名约定」）。`data/` 默认不入库，`.gitignore` 规则须同时覆盖 `change/` 与 `archive/` 两条路径（存量已入库的 `data/` 不强制迁出，不为规则改历史）；`data/` 不参与四要素边界判定，也不作验收阈值来源。
 

@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.9.1
+version: 4.9.2
 ---
 
 # 项目任务管理（workbench）
@@ -9,6 +9,18 @@ version: 4.9.1
 > **定位**：任务体系跟代码走（项目仓 `0_workbench/`），知识产出留在知识库（规则由知识库侧管理）。
 > **规范**见 `SCHEMA.md`；开工前先读 SCHEMA §一/§二/§三——本文件只写怎么做，不替代规范。
 > **本机扩展**：技能目录下若有 `references/local/*.md`，先读（不随上游更新覆盖）。
+
+## 术语
+
+| 术语 | 定义 | 落盘 |
+|---|---|---|
+| workbench | 集合：`0_workbench/` 下所有 change 的工作台 | 目录 |
+| change | 单次任务：一个可验收的工作单元 | `change/<name>/` |
+| work | 过程体/动作层：把 change 从开工推到收口的过程 | 不落盘 |
+| tasks | change 的路书与推进记录：阶段、顺序、进度、阶段结论、证据 | `change/<name>/tasks.md` |
+| spec/design/check | work 的输入合同：目标/方案/量具 | 各自文件 |
+
+`work` 使用 `tasks` 推进，并把结果写回 `tasks`；`tasks` 全勾（含收口段）= change 完结；归档只移动 change，不另写进度表。
 
 ## 使用方式
 

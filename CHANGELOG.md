@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.9.2 (2026-11-15)
+
+### Changed
+
+- 固化术语：workbench = 集合（所有 change）；change = 单次任务；work = 过程体/动作层（从开工到收口，不落盘）；tasks = change 的路书与推进记录（归 change，被 work 使用）。SKILL 新增「术语」表，SCHEMA 目录注释与边界说明同步。
+- 无校验规则或工具行为变更；回归仍 46 passed。
+
 ## 4.9.1 (2026-11-15)
 
 ### Fixed
