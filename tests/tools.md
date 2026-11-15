@@ -94,6 +94,8 @@ python3 "$REPO"/tools/qwork-status.py /tmp/qwa-test --json   # 字段完整
 
 ## 2026-11-14 / 4.9.0 记录
 
+> 4.9.1（2026-11-15）：仅修 CI 的 pytest 安装，工具行为未变，回归仍 46 passed。
+
 - pytest：`41 passed`。
 - `--close --strict`：无自动项日志 → FAIL（`自动项 C1 缺少 data/check-C1.log`）；补齐 C1–C4 日志 → PASS。
 - 项目约束：K1 上限 2、S1 目标 3 → FAIL（`约束 K1 冲突`）；上限 5 → PASS；有约束表但无「项目约束核对」→ FAIL；`需变更` 无用户确认 → FAIL；单位不一致 + 完整日志 → `--close --strict` PASS（INFO 不阻塞）；次数类约束「条件」为空/无计数基准 → FAIL；测量口径 3 次 > 上限 2 次 → FAIL。

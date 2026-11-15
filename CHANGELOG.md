@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.9.1 (2026-11-15)
+
+### Fixed
+
+- GitHub Actions 显式安装 pytest：`setup-python` 环境不保证带 pytest，原 workflow 在「单元回归」步骤直接失败；补 `python -m pip install --upgrade pip pytest` 后远端 CI 通过。
+- 技能行为与校验规则无变更；本版本仅修复发布流水线。
+- 版本 4.9.0 → 4.9.1。
+
 ## 4.9.0 (2026-11-14)
 
 ### Added
