@@ -1,7 +1,7 @@
 ---
 name: qwork
 description: 项目任务管理（workbench）：四要素 spec/design/tasks/check 驱动 change，验收→吸收 design→更新项目级 spec→归档闭环，维护进度。
-version: 4.9.2
+version: 4.9.3
 ---
 
 # 项目任务管理（workbench）
@@ -65,7 +65,7 @@ version: 4.9.2
 
 1. **命名**：kebab-case（小写+连字符，2–4 段），建议 `<主题>-<类型>`（如 `rx-prealloc-ab`）；不带日期；先查 `change/`、`archive/` 同主题（§0.4）。用户未给名 → 拟 2–3 个候选让用户选。
 2. **顺序 spec → check → design → tasks**（验收驱动：先定标准，再定怎么验、再定怎么改）。tasks 开单时就把完整骨架（含「收口」段）建好；边做边填的是状态/结论，不是省段（缺收口段 dispatch 直接 FAIL）。
-3. **数据落 `change/<name>/data/`**：原始日志、脚本输出、实验矩阵（不进四要素、默认不入库）；数字结论回填 tasks。
+3. **数据落 `change/<name>/data/`**：原始日志、脚本输出、实验矩阵（不进四要素、默认不入库）；数字结论回填 tasks。**没有对应 change 的实验原始件不留悬项**（`docs/` 不是附件仓库）：先查遍各 workbench 的 `change/` + `archive/`，无归属就删，删前 `du`/项数确认，结论留在知识库卡里（并写明原始数据已删、数字不可复算）。
 4. **基线未测**：性能/实验型先立 P0；spec 基线写 `待测（tasks P0）`，目标写相对式（`≥ 基线 ×1.10`），底线可留空/待定；P0 后回填绝对值并注 `见 tasks P0`。**目标与判定规则必须开工前定死，基线数值允许后补。**
 5. **测量口径**：工具/参数/环境/采样次数/对照序列写进 spec「测量口径」（实验型必填）；check 只写执行步骤与命令并引用 `spec Sx`，不重复参数、序列或阈值。实验型先读 `references/experiment-playbook.md`；裁决阈值归 spec。用户给不出口径 → AI 给默认口径让用户确认。
 6. **开单即提交**：四要素骨架写好后先 commit（`<change>: 开单`），再开工；后续每阶段提交（§3）。只 add 本 change 与本次改动文件，**禁止 `git add -A`**；他人在场的 dirty 先问归属，`data/` 默认 ignore。项目级 spec/design 的约束裁决/收口改动**单独提交**，不混进 change 开单 commit。
